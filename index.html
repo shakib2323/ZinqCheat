@@ -3,82 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>SecureID Pro | Private Chat</title>
+    <title>SecureID Ultra</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --primary: #00d2ff; --bg: #0f172a; --card: rgba(30, 41, 59, 0.7); }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: white; margin: 0; overflow: hidden; height: 100vh; }
-        .glass { background: var(--card); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; }
-        .container { width: 100%; max-width: 450px; height: 100vh; margin: auto; display: flex; flex-direction: column; position: relative; }
-        .page { display: none; padding: 20px; flex-direction: column; justify-content: center; height: 100%; box-sizing: border-box; }
-        .active { display: flex; }
-
-        /* Speed Optimization: Animations */
-        .loading-ring { display: none; width: 20px; height: 20px; border: 2px solid #f3f3f3; border-top: 2px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-left: 10px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* Messages */
-        #messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 70px; scroll-behavior: smooth; }
-        .bubble { max-width: 80%; padding: 12px; border-radius: 15px; font-size: 14px; position: relative; word-wrap: break-word; }
-        .me { align-self: flex-end; background: var(--primary); color: black; border-bottom-right-radius: 2px; }
-        .partner { align-self: flex-start; background: #334155; border-bottom-left-radius: 2px; }
-        .bubble img { max-width: 100%; border-radius: 10px; margin-top: 5px; }
-
-        /* Input Area */
-        .input-area { position: absolute; bottom: 0; width: 100%; padding: 15px; box-sizing: border-box; display: flex; gap: 10px; background: rgba(15, 23, 42, 0.95); z-index: 10; }
-        input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); padding: 12px; color: white; border-radius: 10px; flex: 1; outline: none; }
-        .btn-icon { background: var(--primary); border: none; width: 45px; height: 45px; border-radius: 10px; cursor: pointer; color: black; font-weight: bold; display: flex; align-items: center; justify-content: center; }
+        :root { --neon: #00f2ff; --bg: #05080f; --panel: #101624; --ghost: #ff007a; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; height: 100vh; overflow: hidden; }
         
-        #privacy-overlay { position: fixed; inset: 0; background: var(--bg); z-index: 9999; display: none; align-items: center; justify-content: center; text-align: center; }
-        .status-msg { font-size: 12px; margin-top: 10px; color: #4ade80; display: none; }
+        /* Layout */
+        .app-container { max-width: 500px; margin: auto; height: 100vh; position: relative; background: radial-gradient(circle at top, #1a2a44 0%, var(--bg) 70%); }
+        .page { display: none; padding: 20px; flex-direction: column; height: 100%; box-sizing: border-box; justify-content: center; }
+        .active { display: flex; animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        /* UI Elements */
+        .glass-card { background: var(--panel); border: 1px solid rgba(0,242,255,0.1); border-radius: 25px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        input { background: #0a0e17; border: 1px solid #1e293b; padding: 15px; color: white; border-radius: 12px; margin-bottom: 15px; width: 100%; box-sizing: border-box; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--neon); box-shadow: 0 0 10px rgba(0,242,255,0.2); }
+        
+        .btn { padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; text-transform: uppercase; letter-spacing: 1px; }
+        .btn-neon { background: var(--neon); color: black; }
+        .btn-ghost { background: transparent; border: 1px solid var(--neon); color: var(--neon); }
+        .btn:active { transform: scale(0.98); }
+
+        /* Loader */
+        .loader { display: none; width: 20px; height: 20px; border: 3px solid rgba(0,0,0,0.1); border-top: 3px solid black; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Chat UI */
+        #msg-flow { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { max-width: 80%; padding: 12px 16px; border-radius: 18px; font-size: 14px; position: relative; }
+        .sender-tag { font-size: 10px; opacity: 0.6; margin-bottom: 4px; display: block; }
+        .me { align-self: flex-end; background: var(--neon); color: black; border-bottom-right-radius: 2px; }
+        .other { align-self: flex-start; background: #1e293b; border-bottom-left-radius: 2px; }
+
+        .chat-nav { padding: 15px; background: var(--panel); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d3748; }
+        .chat-input { padding: 15px; background: var(--panel); display: flex; gap: 10px; }
+
+        #privacy-shield { position: fixed; inset: 0; background: black; z-index: 10000; display: none; align-items: center; justify-content: center; }
     </style>
 </head>
-<body>
+<body onload="checkSavedSession()">
 
-<div id="privacy-overlay"><h2>Privacy Shield Active</h2><p>Switch back to see messages.</p></div>
+<div id="privacy-shield"><h1>Prying Eyes Blocked</h1></div>
 
-<div class="container">
-    <div id="auth-page" class="page active">
-        <h1 style="text-align:center">SecureID Registration</h1>
-        <div class="glass" style="padding:20px;">
-            <input type="email" id="emailInput" placeholder="Email Address">
-            <button onclick="sendOTP()" id="otpBtn" class="btn-icon" style="width:100%; margin-top:10px;">
-                <span>Send OTP</span> <div id="otp-loader" class="loading-ring"></div>
-            </button>
-            <p id="otp-success" class="status-msg">OTP sent! Please check your inbox.</p>
-            
-            <div id="otp-confirm" style="display:none; margin-top:15px;">
-                <input type="text" id="otpInput" placeholder="6-Digit OTP">
-                <button onclick="verifyAndRegister()" class="btn-icon" style="width:100%; margin-top:10px;">Verify & Access ID</button>
-            </div>
+<div class="app-container">
+    <div id="landing-page" class="page active">
+        <h1 style="text-align:center; color: var(--neon); font-size: 32px;">SecureID Ultra</h1>
+        <div class="glass-card">
+            <button class="btn btn-neon" onclick="showPage('reg-page')" style="width:100%"><i class="fas fa-user-plus"></i> Register Account</button>
+            <div style="height:20px"></div>
+            <button class="btn btn-ghost" onclick="showPage('log-page')" style="width:100%"><i class="fas fa-sign-in-alt"></i> Login with ID</button>
         </div>
     </div>
 
-    <div id="connect-page" class="page">
-        <div class="glass" style="padding:20px; text-align:center;">
-            <p>Your ID: <span id="myIdDisplay" style="color:var(--primary); font-weight:bold;">---</span></p>
-            <hr style="opacity:0.1; margin: 20px 0;">
-            <input type="text" id="partnerIdInput" placeholder="Enter Partner's 9-Digit ID">
-            <button onclick="initChat()" class="btn-icon" style="width:100%; margin-top:10px;">Establish Secure Link</button>
-            <p id="wait-msg" style="font-size:11px; color:#888; margin-top:10px; display:none;">Waiting for partner to connect back...</p>
+    <div id="reg-page" class="page">
+        <div class="glass-card">
+            <h3>Register Email</h3>
+            <input type="email" id="regEmail" placeholder="Email Address">
+            <button class="btn btn-neon" onclick="handleOTP()" id="otpBtn" style="width:100%">
+                <span>Get OTP</span> <div class="loader" id="regLoad"></div>
+            </button>
+            <div id="otpBox" style="display:none; margin-top:15px;">
+                <input type="text" id="otpVal" placeholder="6-Digit OTP">
+                <button class="btn btn-neon" onclick="finishReg()" style="width:100%">Verify & Create</button>
+            </div>
+            <p onclick="showPage('landing-page')" style="text-align:center; margin-top:20px; font-size:12px; cursor:pointer;">Back to Start</p>
+        </div>
+    </div>
+
+    <div id="log-page" class="page">
+        <div class="glass-card">
+            <h3>Enter Your 9-Digit ID</h3>
+            <input type="text" id="loginId" placeholder="xxx-xxx-xxx">
+            <button class="btn btn-neon" onclick="doLogin()" style="width:100%">Login Now</button>
+            <p onclick="showPage('landing-page')" style="text-align:center; margin-top:20px; font-size:12px; cursor:pointer;">Back to Start</p>
+        </div>
+    </div>
+
+    <div id="dash-page" class="page">
+        <div class="glass-card" style="text-align:center;">
+            <p style="font-size:12px; opacity:0.5;">YOUR IDENTITY</p>
+            <h2 id="myId" style="color:var(--neon); letter-spacing:2px; margin:10px 0;">---</h2>
+            <button class="btn btn-ghost" onclick="copyID()" style="font-size:10px; padding:8px;"><i class="fas fa-copy"></i> COPY</button>
+            
+            <hr style="border:0.5px solid #2d3748; margin:25px 0;">
+            
+            <input type="text" id="targetId" placeholder="Partner or Group ID">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <button class="btn btn-neon" onclick="startGhost('private')">Private Chat</button>
+                <button class="btn btn-neon" onclick="startGhost('group')" style="background:var(--ghost); color:white;">Group (Max 20)</button>
+            </div>
+            <button onclick="logout()" style="margin-top:25px; background:none; border:none; color:grey; cursor:pointer;">Logout Device</button>
         </div>
     </div>
 
     <div id="chat-page" class="page" style="padding:0;">
-        <div class="glass" style="border-radius:0; padding:15px; display:flex; justify-content:space-between; align-items:center; z-index:11;">
-            <span><i class="fas fa-shield-alt" style="color:var(--primary)"></i> Encrypted</span>
-            <div id="status-dot" style="width:10px; height:10px; border-radius:50%; background:red;"></div>
+        <div class="chat-nav">
+            <span id="chat-title" style="font-weight:bold; color:var(--neon);"></span>
+            <button onclick="burnChat()" style="background:none; border:none; color:var(--ghost);"><i class="fas fa-skull"></i> BURN</button>
         </div>
-        <div id="messages"></div>
-        <div class="input-area">
-            <label class="btn-icon" style="background:#334155; color:white;">
-                <i class="fas fa-camera"></i>
-                <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="uploadImage(this)">
-            </label>
-            <input type="text" id="msgInput" placeholder="Message...">
-            <button onclick="sendText()" class="btn-icon"><i class="fas fa-paper-plane"></i></button>
+        <div id="msg-flow"></div>
+        <div class="chat-input">
+            <label class="btn" style="background:#1e293b; width:45px;"><i class="fas fa-image"></i><input type="file" style="display:none" onchange="uploadMedia(this)"></label>
+            <input type="text" id="msgIn" placeholder="Write something..." style="margin-bottom:0;">
+            <button class="btn btn-neon" onclick="sendMsg()" style="width:50px;"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 </div>
@@ -88,124 +118,129 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
 <script>
-    // --- CONFIG --- (Keep your existing IDs)
     const firebaseConfig = {
         apiKey: "AIzaSyDMMu8Zqa1lG9uJ1m96KCWFx1uwJuZ3Dn4",
         databaseURL: "https://zinqcheat-default-rtdb.firebaseio.com/",
         projectId: "zinqcheat",
-        appId: "1:505801161268:web:bd0376c023d6caedf46861",
         storageBucket: "zinqcheat.appspot.com"
     };
-    
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const storage = firebase.storage();
+    const store = firebase.storage();
     emailjs.init("aDv7N0Ry8Yq1VsNlw");
 
-    let myId = "", partnerId = "", userEmail = "", currentOTP = "";
-    const KEY = "Secret123";
+    let myUid = "", partnerUid = "", currentOTP = "", chatType = "";
+    const SALT = "ZinqKey99";
 
-    // 1. IMPROVED OTP UI
-    function sendOTP() {
-        userEmail = document.getElementById('emailInput').value;
-        if(!userEmail.includes('@')) return alert("Enter valid email");
-        
-        document.getElementById('otp-loader').style.display = 'inline-block';
-        currentOTP = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        emailjs.send("service_ruuzmdf", "template_xxcgwad", { to_email: userEmail, otp_code: currentOTP })
-            .then(() => {
-                document.getElementById('otp-loader').style.display = 'none';
-                document.getElementById('otp-success').style.display = 'block';
-                document.getElementById('otp-confirm').style.display = 'block';
-            });
-    }
-
-    async function verifyAndRegister() {
-        if(document.getElementById('otpInput').value !== currentOTP) return alert("Wrong OTP");
-        const emailKey = btoa(userEmail).replace(/=/g, "");
-        const snap = await db.ref('registered_users/' + emailKey).once('value');
-        
-        myId = snap.exists() ? snap.val() : Math.floor(100000000 + Math.random() * 900000000).toString().replace(/(\d{3})(\d{3})(\d{3})/, "$1-$2-$3");
-        if(!snap.exists()) await db.ref('registered_users/' + emailKey).set(myId);
-
-        document.getElementById('myIdDisplay').innerText = myId;
-        showPage('connect-page');
-    }
-
-    // 2. TWO-WAY HANDSHAKE (No one can cheat)
-    function initChat() {
-        partnerId = document.getElementById('partnerIdInput').value;
-        if(partnerId.length < 11) return alert("Invalid ID");
-        
-        document.getElementById('wait-msg').style.display = 'block';
-        
-        // Presence Logic: "I am looking for partner"
-        db.ref('handshake/' + myId).set(partnerId);
-        
-        // Listen if partner is also looking for ME
-        db.ref('handshake/' + partnerId).on('value', (snap) => {
-            if(snap.val() === myId) {
-                showPage('chat-page');
-                listenMessages();
-                document.getElementById('status-dot').style.background = '#4ade80';
-            }
-        });
-    }
-
-    // 3. OPTIMIZED MESSAGING & AUTO-DELETE
-    function uploadImage(input) {
-        const file = input.files[0];
-        if(!file || file.size > 2000000) return alert("File too large (Max 2MB)");
-        
-        const path = `temp/${Date.now()}.jpg`;
-        const ref = storage.ref(path);
-        
-        ref.put(file).then(async () => {
-            const url = await ref.getDownloadURL();
-            const encUrl = CryptoJS.AES.encrypt(url, KEY).toString();
-            const msgRef = db.ref('chats/' + getRoom() + '/messages').push();
-            msgRef.set({ sender: myId, type: 'img', content: encUrl, ts: Date.now() });
-            
-            // Auto-Delete
-            setTimeout(() => { ref.delete(); msgRef.remove(); }, 600000);
-        });
-    }
-
-    function sendText() {
-        const txt = document.getElementById('msgInput').value;
-        if(!txt) return;
-        const enc = CryptoJS.AES.encrypt(txt, KEY).toString();
-        db.ref('chats/' + getRoom() + '/messages').push({ sender: myId, type: 'txt', content: enc, ts: Date.now() });
-        document.getElementById('msgInput').value = "";
-    }
-
-    function listenMessages() {
-        const roomRef = db.ref('chats/' + getRoom() + '/messages');
-        roomRef.off(); // Prevent double listeners
-        roomRef.on('child_added', (snap) => {
-            const data = snap.val();
-            const dec = CryptoJS.AES.decrypt(data.content, KEY).toString(CryptoJS.enc.Utf8);
-            renderBubble(data.sender === myId, data.type, dec);
-        });
-    }
-
-    function renderBubble(isMe, type, content) {
-        const div = document.createElement('div');
-        div.className = `bubble ${isMe ? 'me' : 'partner'}`;
-        div.innerHTML = type === 'txt' ? content : `<img src="${content}"><br><small style="font-size:8px">Wiping in 10m...</small>`;
-        document.getElementById('messages').appendChild(div);
-        document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
-    }
-
-    function getRoom() { return [myId, partnerId].sort().join("").replace(/-/g, ""); }
     function showPage(id) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
 
-    window.onblur = () => document.getElementById('privacy-overlay').style.display = 'flex';
-    window.onfocus = () => document.getElementById('privacy-overlay').style.display = 'none';
+    function checkSavedSession() {
+        const id = localStorage.getItem('ghost_id');
+        if(id) { myUid = id; document.getElementById('myId').innerText = id; showPage('dash-page'); }
+    }
+
+    // --- AUTH LOGIC ---
+    function handleOTP() {
+        const email = document.getElementById('regEmail').value;
+        if(!email) return;
+        document.getElementById('regLoad').style.display = 'block';
+        currentOTP = Math.floor(100000 + Math.random() * 900000).toString();
+        emailjs.send("service_ruuzmdf", "template_xxcgwad", { to_email: email, otp_code: currentOTP })
+            .then(() => {
+                document.getElementById('regLoad').style.display = 'none';
+                document.getElementById('otpBox').style.display = 'block';
+            });
+    }
+
+    async function finishReg() {
+        if(document.getElementById('otpVal').value !== currentOTP) return;
+        const email = document.getElementById('regEmail').value;
+        const eKey = btoa(email).replace(/=/g,"");
+        const snap = await db.ref('users/' + eKey).once('value');
+        myUid = snap.exists() ? snap.val() : (Math.random().toString().slice(2,11).replace(/(\d{3})(\d{3})(\d{3})/, "$1-$2-$3"));
+        if(!snap.exists()) await db.ref('users/' + eKey).set(myUid);
+        doLoginWithId(myUid);
+    }
+
+    function doLogin() { doLoginWithId(document.getElementById('loginId').value); }
+    function doLoginWithId(id) { 
+        myUid = id; 
+        localStorage.setItem('ghost_id', id); 
+        document.getElementById('myId').innerText = id; 
+        showPage('dash-page'); 
+    }
+
+    // --- CHAT & GROUPS ---
+    function startGhost(type) {
+        chatType = type;
+        partnerUid = document.getElementById('targetId').value;
+        if(!partnerUid) return alert("Enter Target ID");
+
+        const room = getRoom();
+        if(type === 'private') {
+            // Presence logic
+            db.ref('presence/' + myUid).set(partnerUid);
+            db.ref('presence/' + myUid).onDisconnect().remove();
+            db.ref('chats/' + room).onDisconnect().remove();
+
+            db.ref('presence/' + partnerUid).on('value', s => {
+                if(s.val() === myUid) { openChatPage("Secure Private"); }
+            });
+        } else {
+            // Group logic (Max 20 check)
+            db.ref('groups/' + partnerUid + '/members').transaction(m => {
+                if(m && Object.keys(m).length >= 20) return; 
+                return {...m, [myUid.replace(/-/g,"")]: true};
+            }, (err, committed) => {
+                if(!committed) alert("Group is Full (Max 20)");
+                else { openChatPage("Group: " + partnerUid); }
+            });
+        }
+    }
+
+    function openChatPage(title) {
+        document.getElementById('chat-title').innerText = title;
+        showPage('chat-page');
+        listen();
+    }
+
+    function listen() {
+        const room = getRoom();
+        db.ref('chats/' + room + '/msgs').on('value', snap => {
+            const flow = document.getElementById('msg-flow');
+            flow.innerHTML = "";
+            snap.forEach(c => {
+                const d = c.val();
+                const text = CryptoJS.AES.decrypt(d.content, SALT).toString(CryptoJS.enc.Utf8);
+                const isMe = d.sender === myUid;
+                flow.innerHTML += `
+                    <div class="msg ${isMe?'me':'other'}">
+                        <span class="sender-tag">${isMe?'You':d.sender}</span>
+                        ${d.type==='txt'? text : `<img src="${text}" style="width:100%; border-radius:10px;">`}
+                    </div>`;
+            });
+            flow.scrollTop = flow.scrollHeight;
+        });
+    }
+
+    function sendMsg() {
+        const val = document.getElementById('msgIn').value;
+        if(!val) return;
+        const enc = CryptoJS.AES.encrypt(val, SALT).toString();
+        db.ref('chats/' + getRoom() + '/msgs').push({ sender: myUid, content: enc, type: 'txt' });
+        document.getElementById('msgIn').value = "";
+    }
+
+    function burnChat() { db.ref('chats/' + getRoom()).remove(); }
+    function getRoom() { return chatType==='private' ? [myUid, partnerUid].sort().join("").replace(/-/g,"") : partnerUid.replace(/-/g,""); }
+    function copyID() { navigator.clipboard.writeText(myUid); alert("Copied!"); }
+    function logout() { localStorage.clear(); location.reload(); }
+
+    window.onblur = () => document.getElementById('privacy-shield').style.display='flex';
+    window.onfocus = () => document.getElementById('privacy-shield').style.display='none';
 </script>
 </body>
 </html>
