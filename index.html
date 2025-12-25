@@ -3,50 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>SecureID Ultra</title>
+    <title>SecureID Ultra | Shield Active</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --neon: #00f2ff; --bg: #05080f; --panel: #101624; --ghost: #ff007a; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; height: 100vh; overflow: hidden; }
-        
-        /* Layout */
+        :root { --neon: #00f2ff; --bg: #05080f; --panel: #101624; --ghost: #ff007a; --danger: #ff4757; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; height: 100vh; overflow: hidden; user-select: none; transition: background 0.1s; }
         .app-container { max-width: 500px; margin: auto; height: 100vh; position: relative; background: radial-gradient(circle at top, #1a2a44 0%, var(--bg) 70%); }
         .page { display: none; padding: 20px; flex-direction: column; height: 100%; box-sizing: border-box; justify-content: center; }
         .active { display: flex; animation: slideIn 0.3s ease-out; }
         @keyframes slideIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        
+        /* New Flashbang Class */
+        .flashbang { background: white !important; }
 
-        /* UI Elements */
-        .glass-card { background: var(--panel); border: 1px solid rgba(0,242,255,0.1); border-radius: 25px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .loader { display: none; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top: 2px solid black; border-radius: 50%; animation: spin 0.8s linear infinite; margin-left: 10px; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .glass-card { background: var(--panel); border: 1px solid rgba(0,242,255,0.1); border-radius: 25px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; }
         input { background: #0a0e17; border: 1px solid #1e293b; padding: 15px; color: white; border-radius: 12px; margin-bottom: 15px; width: 100%; box-sizing: border-box; outline: none; transition: 0.3s; }
         input:focus { border-color: var(--neon); box-shadow: 0 0 10px rgba(0,242,255,0.2); }
-        
         .btn { padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; text-transform: uppercase; letter-spacing: 1px; }
         .btn-neon { background: var(--neon); color: black; }
         .btn-ghost { background: transparent; border: 1px solid var(--neon); color: var(--neon); }
-        .btn:active { transform: scale(0.98); }
-
-        /* Loader */
-        .loader { display: none; width: 20px; height: 20px; border: 3px solid rgba(0,0,0,0.1); border-top: 3px solid black; border-radius: 50%; animation: spin 0.8s linear infinite; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        /* Chat UI */
+        
+        .back-btn { position: absolute; top: 15px; left: 15px; color: var(--neon); cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px; background: none; border: none; }
+        
         #msg-flow { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { max-width: 80%; padding: 12px 16px; border-radius: 18px; font-size: 14px; position: relative; }
-        .sender-tag { font-size: 10px; opacity: 0.6; margin-bottom: 4px; display: block; }
+        .msg { max-width: 80%; padding: 12px 16px; border-radius: 18px; font-size: 14px; position: relative; word-wrap: break-word; }
+        .sender-tag { font-size: 9px; opacity: 0.6; display: block; margin-bottom: 4px; }
         .me { align-self: flex-end; background: var(--neon); color: black; border-bottom-right-radius: 2px; }
         .other { align-self: flex-start; background: #1e293b; border-bottom-left-radius: 2px; }
+        
+        /* New Receipt & Typing Styles */
+        .receipt { font-size: 10px; float: right; margin-top: 5px; margin-left: 8px; opacity: 0.5; }
+        .read { color: #00f2ff; opacity: 1; }
+        #typing-status { font-size: 11px; padding: 5px 15px; color: var(--neon); font-style: italic; min-height: 20px; }
+        .view-once-btn { color: var(--neon); background: none; border: none; cursor: pointer; font-size: 18px; margin-right: 10px; }
 
         .chat-nav { padding: 15px; background: var(--panel); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d3748; }
         .chat-input { padding: 15px; background: var(--panel); display: flex; gap: 10px; }
-
-        #privacy-shield { position: fixed; inset: 0; background: black; z-index: 10000; display: none; align-items: center; justify-content: center; }
+        #privacy-shield { position: fixed; inset: 0; background: black; z-index: 10000; display: none; align-items: center; justify-content: center; text-align: center; padding: 20px; }
     </style>
 </head>
 <body onload="checkSavedSession()">
 
-<div id="privacy-shield"><h1>Prying Eyes Blocked</h1></div>
+<div id="privacy-shield">
+    <h1 style="color:var(--danger)">SECURITY BREACH</h1>
+    <p id="shield-msg">Privacy Shield Active</p>
+</div>
 
 <div class="app-container">
     <div id="landing-page" class="page active">
@@ -60,144 +66,214 @@
 
     <div id="reg-page" class="page">
         <div class="glass-card">
-            <h3>Register Email</h3>
+            <button class="back-btn" onclick="showPage('landing-page')"><i class="fas fa-arrow-left"></i> BACK</button>
+            <h3 style="margin-top:20px;">Register Email</h3>
             <input type="email" id="regEmail" placeholder="Email Address">
             <button class="btn btn-neon" onclick="handleOTP()" id="otpBtn" style="width:100%">
-                <span>Get OTP</span> <div class="loader" id="regLoad"></div>
+                <span>Get OTP</span><div class="loader" id="regLoad"></div>
             </button>
             <div id="otpBox" style="display:none; margin-top:15px;">
                 <input type="text" id="otpVal" placeholder="6-Digit OTP">
                 <button class="btn btn-neon" onclick="finishReg()" style="width:100%">Verify & Create</button>
             </div>
-            <p onclick="showPage('landing-page')" style="text-align:center; margin-top:20px; font-size:12px; cursor:pointer;">Back to Start</p>
         </div>
     </div>
 
     <div id="log-page" class="page">
         <div class="glass-card">
-            <h3>Enter Your 9-Digit ID</h3>
+            <button class="back-btn" onclick="showPage('landing-page')"><i class="fas fa-arrow-left"></i> BACK</button>
+            <h3 style="margin-top:20px;">Secure Login</h3>
+            <input type="password" id="loginPin" placeholder="Secret PIN (Optional)">
             <input type="text" id="loginId" placeholder="xxx-xxx-xxx">
-            <button class="btn btn-neon" onclick="doLogin()" style="width:100%">Login Now</button>
-            <p onclick="showPage('landing-page')" style="text-align:center; margin-top:20px; font-size:12px; cursor:pointer;">Back to Start</p>
+            <button class="btn btn-neon" onclick="doAdvancedLogin()" style="width:100%">Login Now</button>
         </div>
     </div>
 
     <div id="dash-page" class="page">
         <div class="glass-card" style="text-align:center;">
+            <p id="vault-status" style="font-size:10px; color:var(--ghost)"></p>
             <p style="font-size:12px; opacity:0.5;">YOUR IDENTITY</p>
-            <h2 id="myId" style="color:var(--neon); letter-spacing:2px; margin:10px 0;">---</h2>
-            <button class="btn btn-ghost" onclick="copyID()" style="font-size:10px; padding:8px;"><i class="fas fa-copy"></i> COPY</button>
-            
+            <h2 id="myId" style="color:var(--neon);">---</h2>
+            <button class="btn btn-ghost" onclick="copyID()"><i class="fas fa-copy"></i> COPY ID</button>
             <hr style="border:0.5px solid #2d3748; margin:25px 0;">
-            
             <input type="text" id="targetId" placeholder="Partner or Group ID">
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <button class="btn btn-neon" onclick="startGhost('private')">Private Chat</button>
-                <button class="btn btn-neon" onclick="startGhost('group')" style="background:var(--ghost); color:white;">Group (Max 20)</button>
+                <button class="btn btn-neon" onclick="startGhost('private')">Private</button>
+                <button class="btn btn-neon" onclick="startGhost('group')" style="background:var(--ghost); color:white;">Group</button>
             </div>
-            <button onclick="logout()" style="margin-top:25px; background:none; border:none; color:grey; cursor:pointer;">Logout Device</button>
+            <button onclick="logout()" style="margin-top:20px; background:none; border:none; color:grey;">Logout</button>
         </div>
     </div>
 
     <div id="chat-page" class="page" style="padding:0;">
         <div class="chat-nav">
-            <span id="chat-title" style="font-weight:bold; color:var(--neon);"></span>
-            <button onclick="burnChat()" style="background:none; border:none; color:var(--ghost);"><i class="fas fa-skull"></i> BURN</button>
+            <button onclick="exitChat()" style="background:none; border:none; color:var(--neon);"><i class="fas fa-chevron-left"></i></button>
+            <span id="chat-title" style="color:var(--neon)"></span>
+            <div style="display:flex; gap:10px;">
+                <button onclick="sendViewOnce()" class="view-once-btn" title="View Once"><i class="fas fa-eye"></i></button>
+                <button onclick="burnChat()" style="background:none; border:none; color:var(--ghost);"><i class="fas fa-fire"></i> BURN</button>
+            </div>
         </div>
         <div id="msg-flow"></div>
+        <div id="typing-status"></div>
         <div class="chat-input">
-            <label class="btn" style="background:#1e293b; width:45px;"><i class="fas fa-image"></i><input type="file" style="display:none" onchange="uploadMedia(this)"></label>
-            <input type="text" id="msgIn" placeholder="Write something..." style="margin-bottom:0;">
-            <button class="btn btn-neon" onclick="sendMsg()" style="width:50px;"><i class="fas fa-paper-plane"></i></button>
+            <input type="text" id="msgIn" placeholder="Write something..." oninput="handleTyping()" style="margin-bottom:0;">
+            <button class="btn btn-neon" onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyDMMu8Zqa1lG9uJ1m96KCWFx1uwJuZ3Dn4",
-        databaseURL: "https://zinqcheat-default-rtdb.firebaseio.com/",
-        projectId: "zinqcheat",
-        storageBucket: "zinqcheat.appspot.com"
-    };
+    const firebaseConfig = { apiKey: "AIzaSyDMMu8Zqa1lG9uJ1m96KCWFx1uwJuZ3Dn4", databaseURL: "https://zinqcheat-default-rtdb.firebaseio.com/", projectId: "zinqcheat" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const store = firebase.storage();
     emailjs.init("aDv7N0Ry8Yq1VsNlw");
 
-    let myUid = "", partnerUid = "", currentOTP = "", chatType = "";
+    let myUid = "", userEmail = "", currentOTP = "", chatType = "", partnerUid = "", partnerActive = false, typingTimeout;
     const SALT = "ZinqKey99";
+    const KILL_CODE = "#WIPE_DEVICE";
+    const FAKE_PIN = "0000"; 
 
+    // --- 1. PANIC GESTURE (Shake to Logout) ---
+    let lastX, lastY, lastZ;
+    window.addEventListener('devicemotion', (e) => {
+        let acc = e.accelerationIncludingGravity;
+        if(lastX) {
+            let diff = Math.abs(acc.x + acc.y + acc.z - lastX - lastY - lastZ);
+            if (diff > 55) logout(); 
+        }
+        lastX = acc.x; lastY = acc.y; lastZ = acc.z;
+    });
+
+    // --- 2. FLASHBANG (On Screen Capture Attempt) ---
+    function triggerFlashbang() {
+        document.body.classList.add('flashbang');
+        setTimeout(() => document.body.classList.remove('flashbang'), 500);
+        triggerViolation(); // Bans user per your original code
+    }
+
+    // --- RETAINED: SECURITY & AUTO-DESTRUCT ---
+    async function autoDestruct(room) {
+        const now = Date.now();
+        const cutoff = now - (24 * 60 * 60 * 1000); 
+        const ref = db.ref('chats/' + room + '/msgs');
+        const snap = await ref.once('value');
+        snap.forEach(child => {
+            if (child.val().timestamp && child.val().timestamp < cutoff) {
+                child.ref.remove();
+            }
+        });
+    }
+
+    async function checkBanStatus(id) {
+        const idKey = id.replace(/-/g,"");
+        const banData = await db.ref('blacklist/' + idKey).once('value');
+        if (banData.exists()) {
+            const data = banData.val();
+            if (data.type === "perm") { alert("PERMANENTLY BLOCKED."); return true; }
+            if (data.type === "temp" && Date.now() < data.until) { alert("Suspended."); return true; }
+        }
+        return false;
+    }
+
+    async function triggerViolation() {
+        if (!myUid) return;
+        const idKey = myUid.replace(/-/g,"");
+        const banRef = db.ref('blacklist/' + idKey);
+        const snap = await banRef.once('value');
+        if (snap.exists()) {
+            await banRef.set({ type: "perm", reason: "Strike 2", email: userEmail });
+        } else {
+            const threeDays = Date.now() + (3 * 24 * 60 * 60 * 1000);
+            await banRef.set({ type: "temp", until: threeDays, reason: "Strike 1", email: userEmail });
+        }
+        logout();
+    }
+
+    // --- CORE LOGIC ---
     function showPage(id) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(id).classList.add('active');
     }
 
-    function checkSavedSession() {
+    async function checkSavedSession() {
         const id = localStorage.getItem('ghost_id');
-        if(id) { myUid = id; document.getElementById('myId').innerText = id; showPage('dash-page'); }
+        const email = localStorage.getItem('ghost_email');
+        if(id) {
+            if (await checkBanStatus(id)) { logout(); return; }
+            myUid = id; userEmail = email;
+            document.getElementById('myId').innerText = id; 
+            showPage('dash-page'); 
+        }
     }
 
-    // --- AUTH LOGIC ---
+    // --- FAKE PIN LOGIC ---
+    function doAdvancedLogin() {
+        const pin = document.getElementById('loginPin').value;
+        const id = document.getElementById('loginId').value;
+        if(pin === FAKE_PIN) {
+            myUid = "999-000-999"; 
+            document.getElementById('myId').innerText = myUid;
+            document.getElementById('vault-status').innerText = "DUMMY MODE";
+            showPage('dash-page');
+        } else {
+            doLogin();
+        }
+    }
+
     function handleOTP() {
-        const email = document.getElementById('regEmail').value;
-        if(!email) return;
-        document.getElementById('regLoad').style.display = 'block';
+        userEmail = document.getElementById('regEmail').value;
+        if(!userEmail) return;
+        document.getElementById('regLoad').style.display = 'inline-block';
         currentOTP = Math.floor(100000 + Math.random() * 900000).toString();
-        emailjs.send("service_ruuzmdf", "template_xxcgwad", { to_email: email, otp_code: currentOTP })
-            .then(() => {
-                document.getElementById('regLoad').style.display = 'none';
-                document.getElementById('otpBox').style.display = 'block';
+        emailjs.send("service_ruuzmdf", "template_xxcgwad", { to_email: userEmail, otp_code: currentOTP })
+            .then(() => { 
+                document.getElementById('regLoad').style.display = 'none'; 
+                document.getElementById('otpBox').style.display = 'block'; 
             });
     }
 
     async function finishReg() {
         if(document.getElementById('otpVal').value !== currentOTP) return;
-        const email = document.getElementById('regEmail').value;
-        const eKey = btoa(email).replace(/=/g,"");
+        const eKey = btoa(userEmail).replace(/=/g,"");
         const snap = await db.ref('users/' + eKey).once('value');
         myUid = snap.exists() ? snap.val() : (Math.random().toString().slice(2,11).replace(/(\d{3})(\d{3})(\d{3})/, "$1-$2-$3"));
         if(!snap.exists()) await db.ref('users/' + eKey).set(myUid);
+        localStorage.setItem('ghost_email', userEmail);
         doLoginWithId(myUid);
     }
 
-    function doLogin() { doLoginWithId(document.getElementById('loginId').value); }
-    function doLoginWithId(id) { 
-        myUid = id; 
-        localStorage.setItem('ghost_id', id); 
-        document.getElementById('myId').innerText = id; 
-        showPage('dash-page'); 
+    async function doLogin() {
+        const id = document.getElementById('loginId').value;
+        if (await checkBanStatus(id)) return;
+        doLoginWithId(id);
     }
 
-    // --- CHAT & GROUPS ---
+    function doLoginWithId(id) {
+        myUid = id; localStorage.setItem('ghost_id', id);
+        document.getElementById('myId').innerText = id; showPage('dash-page');
+    }
+
     function startGhost(type) {
         chatType = type;
         partnerUid = document.getElementById('targetId').value;
-        if(!partnerUid) return alert("Enter Target ID");
-
-        const room = getRoom();
+        if(!partnerUid) return;
+        autoDestruct(getRoom());
         if(type === 'private') {
-            // Presence logic
-            db.ref('presence/' + myUid).set(partnerUid);
-            db.ref('presence/' + myUid).onDisconnect().remove();
-            db.ref('chats/' + room).onDisconnect().remove();
-
+            db.ref('presence/' + myUid).set(getRoom());
             db.ref('presence/' + partnerUid).on('value', s => {
-                if(s.val() === myUid) { openChatPage("Secure Private"); }
+                partnerActive = (s.val() === getRoom());
+                if(s.val() === getRoom()) openChatPage("Secure Private");
+            });
+            // Typing Listen
+            db.ref('typing/' + getRoom() + '/' + partnerUid).on('value', s => {
+                document.getElementById('typing-status').innerText = s.val() ? "Partner is typing..." : "";
             });
         } else {
-            // Group logic (Max 20 check)
-            db.ref('groups/' + partnerUid + '/members').transaction(m => {
-                if(m && Object.keys(m).length >= 20) return; 
-                return {...m, [myUid.replace(/-/g,"")]: true};
-            }, (err, committed) => {
-                if(!committed) alert("Group is Full (Max 20)");
-                else { openChatPage("Group: " + partnerUid); }
-            });
+            openChatPage("Group Chat");
         }
     }
 
@@ -207,38 +283,82 @@
         listen();
     }
 
+    function handleTyping() {
+        if(chatType !== 'private') return;
+        db.ref('typing/' + getRoom() + '/' + myUid).set(true);
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => {
+            db.ref('typing/' + getRoom() + '/' + myUid).set(false);
+        }, 2000);
+    }
+
+    function exitChat() {
+        db.ref('presence/' + myUid).remove();
+        db.ref('typing/' + getRoom() + '/' + myUid).remove();
+        showPage('dash-page');
+    }
+
     function listen() {
-        const room = getRoom();
-        db.ref('chats/' + room + '/msgs').on('value', snap => {
-            const flow = document.getElementById('msg-flow');
-            flow.innerHTML = "";
+        db.ref('chats/' + getRoom() + '/msgs').on('value', snap => {
+            const flow = document.getElementById('msg-flow'); flow.innerHTML = "";
             snap.forEach(c => {
                 const d = c.val();
-                const text = CryptoJS.AES.decrypt(d.content, SALT).toString(CryptoJS.enc.Utf8);
-                const isMe = d.sender === myUid;
-                flow.innerHTML += `
-                    <div class="msg ${isMe?'me':'other'}">
-                        <span class="sender-tag">${isMe?'You':d.sender}</span>
-                        ${d.type==='txt'? text : `<img src="${text}" style="width:100%; border-radius:10px;">`}
-                    </div>`;
+                try {
+                    const text = CryptoJS.AES.decrypt(d.content, SALT).toString(CryptoJS.enc.Utf8);
+                    if(text === KILL_CODE && d.sender !== myUid) { logout(); return; }
+                    const isMe = d.sender === myUid;
+                    
+                    const readStatus = (d.wasRead || (isMe && partnerActive)) ? "read" : "";
+                    const receipt = isMe ? `<span class="receipt ${readStatus}"><i class="fas fa-check-double"></i></span>` : "";
+
+                    if(d.viewOnce && !isMe) {
+                        flow.innerHTML += `<div class="msg other" onclick="viewAndDestroy('${c.key}')" style="cursor:pointer; font-style:italic;"><i class="fas fa-eye"></i> View Once Message</div>`;
+                    } else {
+                        flow.innerHTML += `<div class="msg ${isMe?'me':'other'}"><span class="sender-tag">${d.sender}</span>${text}${receipt}</div>`;
+                    }
+                } catch(e) {}
             });
             flow.scrollTop = flow.scrollHeight;
         });
     }
 
+    function viewAndDestroy(key) {
+        db.ref('chats/' + getRoom() + '/msgs/' + key).once('value', s => {
+            const d = s.val();
+            const text = CryptoJS.AES.decrypt(d.content, SALT).toString(CryptoJS.enc.Utf8);
+            alert("SENSITIVE MESSAGE: " + text.replace("👁️ ", ""));
+            db.ref('chats/' + getRoom() + '/msgs/' + key).remove();
+        });
+    }
+
     function sendMsg() {
-        const val = document.getElementById('msgIn').value;
-        if(!val) return;
+        const val = document.getElementById('msgIn').value; if(!val) return;
         const enc = CryptoJS.AES.encrypt(val, SALT).toString();
-        db.ref('chats/' + getRoom() + '/msgs').push({ sender: myUid, content: enc, type: 'txt' });
+        db.ref('chats/' + getRoom() + '/msgs').push({ 
+            sender: myUid, 
+            content: enc, 
+            timestamp: Date.now(),
+            wasRead: partnerActive
+        });
+        document.getElementById('msgIn').value = "";
+        db.ref('typing/' + getRoom() + '/' + myUid).set(false);
+    }
+
+    function sendViewOnce() {
+        const val = document.getElementById('msgIn').value; if(!val) return;
+        const enc = CryptoJS.AES.encrypt("👁️ " + val, SALT).toString();
+        db.ref('chats/' + getRoom() + '/msgs').push({ 
+            sender: myUid, content: enc, timestamp: Date.now(), viewOnce: true 
+        });
         document.getElementById('msgIn').value = "";
     }
 
     function burnChat() { db.ref('chats/' + getRoom()).remove(); }
     function getRoom() { return chatType==='private' ? [myUid, partnerUid].sort().join("").replace(/-/g,"") : partnerUid.replace(/-/g,""); }
-    function copyID() { navigator.clipboard.writeText(myUid); alert("Copied!"); }
     function logout() { localStorage.clear(); location.reload(); }
+    function copyID() { navigator.clipboard.writeText(myUid); alert("ID Copied!"); }
 
+    window.addEventListener('keyup', (e) => { if (e.key === 'PrintScreen') triggerFlashbang(); });
     window.onblur = () => document.getElementById('privacy-shield').style.display='flex';
     window.onfocus = () => document.getElementById('privacy-shield').style.display='none';
 </script>
