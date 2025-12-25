@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>SecureID Ultra | Shield Active</title>
+    <title>SecureID Ultra | ZinqCheat</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -14,40 +14,48 @@
         .page { display: none; padding: 20px; flex-direction: column; height: 100%; box-sizing: border-box; justify-content: center; }
         .active { display: flex; animation: slideIn 0.3s ease-out; }
         @keyframes slideIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        
-        /* New Flashbang Class */
         .flashbang { background: white !important; }
-
         .loader { display: none; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top: 2px solid black; border-radius: 50%; animation: spin 0.8s linear infinite; margin-left: 10px; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
-
         .glass-card { background: var(--panel); border: 1px solid rgba(0,242,255,0.1); border-radius: 25px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); position: relative; }
-        input { background: #0a0e17; border: 1px solid #1e293b; padding: 15px; color: white; border-radius: 12px; margin-bottom: 15px; width: 100%; box-sizing: border-box; outline: none; transition: 0.3s; }
+        input, textarea { background: #0a0e17; border: 1px solid #1e293b; padding: 15px; color: white; border-radius: 12px; margin-bottom: 15px; width: 100%; box-sizing: border-box; outline: none; transition: 0.3s; font-family: inherit; }
         input:focus { border-color: var(--neon); box-shadow: 0 0 10px rgba(0,242,255,0.2); }
         .btn { padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px; text-transform: uppercase; letter-spacing: 1px; }
         .btn-neon { background: var(--neon); color: black; }
         .btn-ghost { background: transparent; border: 1px solid var(--neon); color: var(--neon); }
-        
         .back-btn { position: absolute; top: 15px; left: 15px; color: var(--neon); cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px; background: none; border: none; }
-        
         #msg-flow { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
         .msg { max-width: 80%; padding: 12px 16px; border-radius: 18px; font-size: 14px; position: relative; word-wrap: break-word; }
         .sender-tag { font-size: 9px; opacity: 0.6; display: block; margin-bottom: 4px; }
         .me { align-self: flex-end; background: var(--neon); color: black; border-bottom-right-radius: 2px; }
         .other { align-self: flex-start; background: #1e293b; border-bottom-left-radius: 2px; }
-        
-        /* New Receipt & Typing Styles */
         .receipt { font-size: 10px; float: right; margin-top: 5px; margin-left: 8px; opacity: 0.5; }
         .read { color: #00f2ff; opacity: 1; }
         #typing-status { font-size: 11px; padding: 5px 15px; color: var(--neon); font-style: italic; min-height: 20px; }
         .view-once-btn { color: var(--neon); background: none; border: none; cursor: pointer; font-size: 18px; margin-right: 10px; }
-
         .chat-nav { padding: 15px; background: var(--panel); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2d3748; }
         .chat-input { padding: 15px; background: var(--panel); display: flex; gap: 10px; }
         #privacy-shield { position: fixed; inset: 0; background: black; z-index: 10000; display: none; align-items: center; justify-content: center; text-align: center; padding: 20px; }
+        #ban-overlay { position: fixed; inset: 0; background: rgba(5,8,15,0.98); z-index: 20000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        #countdown-timer { font-size: 40px; color: var(--danger); font-family: monospace; margin: 20px 0; text-shadow: 0 0 15px var(--danger); }
+        .admin-badge { background: var(--danger); color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; margin-bottom: 10px; display: inline-block; }
+        .report-item { background: #0a0e17; border: 1px solid #2d3748; border-radius: 10px; padding: 15px; margin-bottom: 15px; text-align: left; font-size: 12px; border-left: 4px solid var(--danger); }
+        .report-item.banned { border-left-color: #2ecc71; }
+        #admin-msg-box { background: rgba(255, 71, 87, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 10px; border-radius: 10px; margin-bottom: 15px; font-size: 13px; display: none; }
+        .ban-btn { background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 5px; font-size: 10px; cursor: pointer; margin-top: 8px; margin-right: 5px; }
+        .temp-ban-btn { background: #f39c12; color: white; border: none; padding: 5px 10px; border-radius: 5px; font-size: 10px; cursor: pointer; margin-top: 8px; }
+        .unblock-btn { background: #2ecc71; color: white; border: none; padding: 8px 12px; border-radius: 5px; font-size: 10px; cursor: pointer; margin-top: 10px; width: 100%; font-weight: bold; }
     </style>
 </head>
 <body onload="checkSavedSession()">
+
+<div id="ban-overlay">
+    <i class="fas fa-user-slash" style="font-size: 50px; color: var(--danger);"></i>
+    <h1 style="color: var(--danger);">ACCESS DENIED</h1>
+    <p id="ban-reason" style="opacity: 0.7;"></p>
+    <div id="countdown-timer">00:00:00</div>
+    <p style="font-size: 12px; opacity: 0.5;">Access will restore automatically when timer ends.</p>
+</div>
 
 <div id="privacy-shield">
     <h1 style="color:var(--danger)">SECURITY BREACH</h1>
@@ -58,60 +66,99 @@
     <div id="landing-page" class="page active">
         <h1 style="text-align:center; color: var(--neon); font-size: 32px;">SecureID Ultra</h1>
         <div class="glass-card">
-            <button class="btn btn-neon" onclick="showPage('reg-page')" style="width:100%"><i class="fas fa-user-plus"></i> Register Account</button>
+            <button class="btn btn-neon" onclick="showPage('reg-page'); playSound('click') " style="width:100%"><i class="fas fa-user-plus"></i> Register Account</button>
             <div style="height:20px"></div>
-            <button class="btn btn-ghost" onclick="showPage('log-page')" style="width:100%"><i class="fas fa-sign-in-alt"></i> Login with ID</button>
+            <button class="btn btn-ghost" onclick="showPage('log-page'); playSound('click')" style="width:100%"><i class="fas fa-sign-in-alt"></i> Login with ID</button>
         </div>
     </div>
 
     <div id="reg-page" class="page">
         <div class="glass-card">
-            <button class="back-btn" onclick="showPage('landing-page')"><i class="fas fa-arrow-left"></i> BACK</button>
+            <button class="back-btn" onclick="showPage('landing-page'); playSound('click')"><i class="fas fa-arrow-left"></i> BACK</button>
             <h3 style="margin-top:20px;">Register Email</h3>
             <input type="email" id="regEmail" placeholder="Email Address">
-            <button class="btn btn-neon" onclick="handleOTP()" id="otpBtn" style="width:100%">
+            <button class="btn btn-neon" onclick="handleOTP(); playSound('click')" id="otpBtn" style="width:100%">
                 <span>Get OTP</span><div class="loader" id="regLoad"></div>
             </button>
             <div id="otpBox" style="display:none; margin-top:15px;">
                 <input type="text" id="otpVal" placeholder="6-Digit OTP">
-                <button class="btn btn-neon" onclick="finishReg()" style="width:100%">Verify & Create</button>
+                <button class="btn btn-neon" onclick="finishReg(); playSound('click')" style="width:100%">Verify & Create</button>
             </div>
         </div>
     </div>
 
     <div id="log-page" class="page">
         <div class="glass-card">
-            <button class="back-btn" onclick="showPage('landing-page')"><i class="fas fa-arrow-left"></i> BACK</button>
+            <button class="back-btn" onclick="showPage('landing-page'); playSound('click')"><i class="fas fa-arrow-left"></i> BACK</button>
             <h3 style="margin-top:20px;">Secure Login</h3>
             <input type="password" id="loginPin" placeholder="Secret PIN (Optional)">
             <input type="text" id="loginId" placeholder="xxx-xxx-xxx">
-            <button class="btn btn-neon" onclick="doAdvancedLogin()" style="width:100%">Login Now</button>
+            <button class="btn btn-neon" onclick="doAdvancedLogin(); playSound('click')" style="width:100%">Login Now</button>
         </div>
     </div>
 
     <div id="dash-page" class="page">
         <div class="glass-card" style="text-align:center;">
+            <div id="admin-msg-box"></div>
+            <div id="admin-access-btn" style="display:none">
+                <span class="admin-badge">ADMIN ACTIVE</span>
+                <button class="btn btn-neon" onclick="showPage('admin-panel'); playSound('click')" style="width:100%; margin-bottom:15px; background:var(--danger); color:white;">OPEN CONTROL PANEL</button>
+            </div>
+            
             <p id="vault-status" style="font-size:10px; color:var(--ghost)"></p>
             <p style="font-size:12px; opacity:0.5;">YOUR IDENTITY</p>
             <h2 id="myId" style="color:var(--neon);">---</h2>
-            <button class="btn btn-ghost" onclick="copyID()"><i class="fas fa-copy"></i> COPY ID</button>
+            <button class="btn btn-ghost" onclick="copyID(); playSound('click')"><i class="fas fa-copy"></i> COPY ID</button>
             <hr style="border:0.5px solid #2d3748; margin:25px 0;">
             <input type="text" id="targetId" placeholder="Partner or Group ID">
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <button class="btn btn-neon" onclick="startGhost('private')">Private</button>
-                <button class="btn btn-neon" onclick="startGhost('group')" style="background:var(--ghost); color:white;">Group</button>
+                <button class="btn btn-neon" onclick="startGhost('private'); playSound('click')">Private</button>
+                <button class="btn btn-neon" onclick="startGhost('group'); playSound('click')" style="background:var(--ghost); color:white;">Group</button>
             </div>
-            <button onclick="logout()" style="margin-top:20px; background:none; border:none; color:grey;">Logout</button>
+            <button onclick="logout(); playSound('click')" style="margin-top:20px; background:none; border:none; color:grey;">Logout</button>
+        </div>
+    </div>
+
+    <div id="admin-panel" class="page">
+        <div class="glass-card" style="max-height: 90vh; overflow-y: auto;">
+            <button class="back-btn" onclick="showPage('dash-page'); playSound('click')"><i class="fas fa-arrow-left"></i> BACK</button>
+            <h3 style="margin-top:25px; color:var(--danger)">Admin Control</h3>
+            <div style="margin-bottom:20px;">
+                <p style="font-size:12px;">Broadcast Message to All Users:</p>
+                <textarea id="broadcastMsg" placeholder="Type message for all users..."></textarea>
+                <button class="btn btn-neon" onclick="sendBroadcast(); playSound('click')" style="width:100%">Post Message</button>
+            </div>
+            <hr style="border:0.5px solid #2d3748;">
+            <h4 style="font-size:14px; color:var(--neon)">Reported Users</h4>
+            <div id="report-list">
+                <p style="font-size:12px; opacity:0.5;">Loading reports...</p>
+            </div>
+            <hr style="border:0.5px solid #2d3748; margin: 20px 0;">
+            <h4 style="font-size:14px; color:var(--ghost)"><i class="fas fa-user-lock"></i> Currently Banned Users</h4>
+            <div id="banned-list-admin">
+                <p style="font-size:12px; opacity:0.5;">No users in blacklist.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="report-page" class="page">
+        <div class="glass-card">
+            <button class="back-btn" onclick="showPage('chat-page'); playSound('click')"><i class="fas fa-arrow-left"></i> CANCEL</button>
+            <h3 style="margin-top:20px; color:var(--danger)">Report Violation</h3>
+            <input type="text" id="repTargetId" placeholder="Enter ID to Report" readonly>
+            <textarea id="repReason" placeholder="Describe the reason for reporting..." style="height:100px;"></textarea>
+            <button class="btn btn-neon" onclick="submitFinalReport(); playSound('click')" style="width:100%; background:var(--danger); color:white;">Submit Report</button>
         </div>
     </div>
 
     <div id="chat-page" class="page" style="padding:0;">
         <div class="chat-nav">
-            <button onclick="exitChat()" style="background:none; border:none; color:var(--neon);"><i class="fas fa-chevron-left"></i></button>
+            <button onclick="exitChat(); playSound('click')" style="background:none; border:none; color:var(--neon);"><i class="fas fa-chevron-left"></i></button>
             <span id="chat-title" style="color:var(--neon)"></span>
-            <div style="display:flex; gap:10px;">
-                <button onclick="sendViewOnce()" class="view-once-btn" title="View Once"><i class="fas fa-eye"></i></button>
-                <button onclick="burnChat()" style="background:none; border:none; color:var(--ghost);"><i class="fas fa-fire"></i> BURN</button>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <button onclick="openReportModal(); playSound('click')" style="background:none; border:none; color:var(--danger); font-size:12px; font-weight:bold; cursor:pointer;"><i class="fas fa-flag"></i> REPORT</button>
+                <button onclick="sendViewOnce(); playSound('click')" class="view-once-btn" title="View Once"><i class="fas fa-eye"></i></button>
+                <button onclick="burnChat(); playSound('burn')" style="background:none; border:none; color:var(--ghost);"><i class="fas fa-fire"></i> BURN</button>
             </div>
         </div>
         <div id="msg-flow"></div>
@@ -132,12 +179,173 @@
     const db = firebase.database();
     emailjs.init("aDv7N0Ry8Yq1VsNlw");
 
-    let myUid = "", userEmail = "", currentOTP = "", chatType = "", partnerUid = "", partnerActive = false, typingTimeout;
+    const sounds = {
+        click: new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'),
+        msgSend: new Audio('https://assets.mixkit.co/active_storage/sfx/2357/2357-preview.mp3'),
+        msgRec: new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'),
+        alert: new Audio('https://assets.mixkit.co/active_storage/sfx/2533/2533-preview.mp3'),
+        burn: new Audio('https://assets.mixkit.co/active_storage/sfx/514/514-preview.mp3')
+    };
+    function playSound(name) { 
+        if(sounds[name]) { 
+            sounds[name].currentTime = 0; 
+            sounds[name].play().catch(() => {});
+        } 
+    }
+
+    let myUid = "", userEmail = "", currentOTP = "", chatType = "", partnerUid = "", partnerActive = false, typingTimeout, banInterval;
     const SALT = "ZinqKey99";
     const KILL_CODE = "#WIPE_DEVICE";
     const FAKE_PIN = "0000"; 
+    const ADMIN_EMAIL = "shakibscrd@gmail.com";
+    const BANNED_LIST = ["bomb", "kill", "drug", "hack", "scam", "weapon", "terror", "abuse", "suicide", "murder", "harm", "illegal","Shahzeb"];
 
-    // --- 1. PANIC GESTURE (Shake to Logout) ---
+    function listenForBroadcast() {
+        db.ref('broadcast').on('value', snap => {
+            const msg = snap.val();
+            const box = document.getElementById('admin-msg-box');
+            if(msg) { box.innerText = "ADMIN NOTICE: " + msg; box.style.display = 'block'; playSound('alert'); }
+            else { box.style.display = 'none'; }
+        });
+    }
+
+    function checkAdminStatus() {
+        if(userEmail === ADMIN_EMAIL) {
+            document.getElementById('admin-access-btn').style.display = 'block';
+            loadReports();
+            loadAdminBlacklist();
+        }
+    }
+
+    function sendBroadcast() {
+        const msg = document.getElementById('broadcastMsg').value;
+        db.ref('broadcast').set(msg).then(() => {
+            alert("Broadcast sent!");
+            document.getElementById('broadcastMsg').value = "";
+        });
+    }
+
+    function loadReports() {
+        db.ref('reports').on('value', snap => {
+            const list = document.getElementById('report-list');
+            list.innerHTML = "";
+            if(!snap.exists()) list.innerHTML = "No reports found.";
+            snap.forEach(child => {
+                const r = child.val();
+                list.innerHTML += `
+                    <div class="report-item">
+                        <b>Target ID:</b> ${r.target}<br>
+                        <b>Reason:</b> ${r.reason}<br>
+                        <b>By:</b> ${r.reporter}<br>
+                        <button class="ban-btn" onclick="adminBanUser('${r.target}', 'perm'); playSound('click')">PERMANENT</button>
+                        <button class="temp-ban-btn" onclick="adminBanUser('${r.target}', 'temp'); playSound('click')">24H BAN</button>
+                    </div>`;
+            });
+        });
+    }
+
+    // --- UPDATED: ADMIN BLACKLIST LOADING WITH UNBLOCK ---
+    function loadAdminBlacklist() {
+        db.ref('blacklist').on('value', snap => {
+            const list = document.getElementById('banned-list-admin');
+            list.innerHTML = "";
+            if(!snap.exists()) {
+                list.innerHTML = "<p style='font-size:12px; opacity:0.5;'>No banned users found.</p>";
+                return;
+            }
+            snap.forEach(child => {
+                const data = child.val();
+                const rawId = child.key;
+                const formattedId = rawId.replace(/(\d{3})(\d{3})(\d{3})/, "$1-$2-$3");
+                list.innerHTML += `
+                    <div class="report-item banned">
+                        <b style="color:#2ecc71">BANNED ID: ${formattedId}</b><br>
+                        <b>Email:</b> ${data.email || 'N/A'}<br>
+                        <b>Type:</b> ${data.type.toUpperCase()}<br>
+                        <b>Reason:</b> ${data.reason || 'N/A'}<br>
+                        <button class="unblock-btn" onclick="adminUnblockUser('${formattedId}'); playSound('click')">
+                            <i class="fas fa-unlock"></i> UNBLOCK THIS USER
+                        </button>
+                    </div>`;
+            });
+        });
+    }
+
+    async function adminBanUser(id, type) {
+        const idKey = id.replace(/-/g,"");
+        let banReason = "";
+        let targetEmail = "";
+
+        const userSnap = await db.ref('id_to_email/' + idKey).once('value');
+        if(userSnap.exists()) { targetEmail = userSnap.val(); }
+
+        if(type === 'perm') {
+            if(!confirm("Perm Ban " + id + "?")) return;
+            banReason = "PERMANENT BAN: Your ID has been permanently blocked by Admin for security violations.";
+            await db.ref('blacklist/' + idKey).set({ type: "perm", reason: "Admin Banned", timestamp: Date.now(), email: targetEmail });
+        } else {
+            if(!confirm("Ban " + id + " for 24 Hours?")) return;
+            banReason = "SUSPENSION: Your ID is blocked for 24 Hours due to policy violation.";
+            const until = Date.now() + (24 * 60 * 60 * 1000);
+            await db.ref('blacklist/' + idKey).set({ type: "temp", until: until, reason: "Temporary Suspension", email: targetEmail });
+        }
+
+        if(targetEmail) {
+            emailjs.send("service_ruuzmdf", "template_xxcgwad", { 
+                to_email: targetEmail, 
+                otp_code: `SECURITY ALERT: ${banReason}` 
+            }).then(() => console.log("Ban email sent to " + targetEmail));
+        }
+        alert("Action complete for " + id);
+    }
+
+    // --- NEW: ADMIN UNBLOCK FUNCTION ---
+    async function adminUnblockUser(id) {
+        if(!confirm("Confirm unblocking user: " + id + "?")) return;
+        const idKey = id.replace(/-/g,"");
+        
+        // Find email to notify user
+        const banSnap = await db.ref('blacklist/' + idKey).once('value');
+        const targetEmail = banSnap.exists() ? banSnap.val().email : "";
+
+        await db.ref('blacklist/' + idKey).remove();
+
+        if(targetEmail) {
+            emailjs.send("service_ruuzmdf", "template_xxcgwad", { 
+                to_email: targetEmail, 
+                otp_code: `ACCESS RESTORED: Your SecureID ${id} has been unblocked by the Admin. You can now login.` 
+            });
+        }
+        alert("User " + id + " has been successfully unblocked.");
+    }
+
+    function openReportModal() {
+        if(!partnerUid) return alert("No user detected.");
+        document.getElementById('repTargetId').value = partnerUid;
+        showPage('report-page');
+    }
+
+    async function submitFinalReport() {
+        const reason = document.getElementById('repReason').value;
+        const target = document.getElementById('repTargetId').value;
+        if(!reason) return alert("Please enter reason.");
+        await db.ref('reports').push({ target, reporter: myUid, reason, timestamp: Date.now() });
+        emailjs.send("service_ruuzmdf", "template_xxcgwad", { to_email: "ADMIN", otp_code: `REPORT ID: ${target} REASON: ${reason}` });
+        alert("Report Sent.");
+        showPage('chat-page');
+    }
+
+    function checkContentSafety(text) {
+        const lower = text.toLowerCase();
+        if (BANNED_LIST.some(word => lower.includes(word))) {
+            playSound('alert');
+            alert("VIOLATION DETECTED.");
+            triggerViolation(); 
+            return false;
+        }
+        return true;
+    }
+
     let lastX, lastY, lastZ;
     window.addEventListener('devicemotion', (e) => {
         let acc = e.accelerationIncludingGravity;
@@ -148,52 +356,72 @@
         lastX = acc.x; lastY = acc.y; lastZ = acc.z;
     });
 
-    // --- 2. FLASHBANG (On Screen Capture Attempt) ---
     function triggerFlashbang() {
+        playSound('alert');
         document.body.classList.add('flashbang');
         setTimeout(() => document.body.classList.remove('flashbang'), 500);
-        triggerViolation(); // Bans user per your original code
-    }
-
-    // --- RETAINED: SECURITY & AUTO-DESTRUCT ---
-    async function autoDestruct(room) {
-        const now = Date.now();
-        const cutoff = now - (24 * 60 * 60 * 1000); 
-        const ref = db.ref('chats/' + room + '/msgs');
-        const snap = await ref.once('value');
-        snap.forEach(child => {
-            if (child.val().timestamp && child.val().timestamp < cutoff) {
-                child.ref.remove();
-            }
-        });
+        triggerViolation(); 
     }
 
     async function checkBanStatus(id) {
+        if(!id) return false;
         const idKey = id.replace(/-/g,"");
         const banData = await db.ref('blacklist/' + idKey).once('value');
         if (banData.exists()) {
             const data = banData.val();
-            if (data.type === "perm") { alert("PERMANENTLY BLOCKED."); return true; }
-            if (data.type === "temp" && Date.now() < data.until) { alert("Suspended."); return true; }
+            if(data.type === "perm") {
+                playSound('alert');
+                alert("THIS ID IS PERMANENTLY BANNED.");
+                return true;
+            }
+            if(data.type === "temp") {
+                if(Date.now() < data.until) {
+                    showBanCountdown(data.until, data.reason);
+                    return true;
+                } else {
+                    await db.ref('blacklist/' + idKey).remove();
+                    return false;
+                }
+            }
         }
         return false;
+    }
+
+    function showBanCountdown(until, reason) {
+        playSound('alert');
+        document.getElementById('ban-overlay').style.display = 'flex';
+        document.getElementById('ban-reason').innerText = "Reason: " + reason;
+        clearInterval(banInterval);
+        banInterval = setInterval(() => {
+            const now = Date.now();
+            const diff = until - now;
+            if(diff <= 0) {
+                clearInterval(banInterval);
+                document.getElementById('ban-overlay').style.display = 'none';
+                location.reload();
+                return;
+            }
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const secs = Math.floor((diff % (1000 * 60)) / 1000);
+            document.getElementById('countdown-timer').innerText = 
+                `${String(hours).padStart(2,'0')}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+        }, 1000);
     }
 
     async function triggerViolation() {
         if (!myUid) return;
         const idKey = myUid.replace(/-/g,"");
-        const banRef = db.ref('blacklist/' + idKey);
-        const snap = await banRef.once('value');
-        if (snap.exists()) {
-            await banRef.set({ type: "perm", reason: "Strike 2", email: userEmail });
-        } else {
-            const threeDays = Date.now() + (3 * 24 * 60 * 60 * 1000);
-            await banRef.set({ type: "temp", until: threeDays, reason: "Strike 1", email: userEmail });
+        await db.ref('blacklist/' + idKey).set({ type: "perm", reason: "Harmful Content", email: userEmail });
+        if(userEmail) {
+            emailjs.send("service_ruuzmdf", "template_xxcgwad", { 
+                to_email: userEmail, 
+                otp_code: `CRITICAL NOTICE: Your ID ${myUid} has been automatically banned permanently due to content safety violations.` 
+            });
         }
-        logout();
+        setTimeout(() => logout(), 1000);
     }
 
-    // --- CORE LOGIC ---
     function showPage(id) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(id).classList.add('active');
@@ -203,21 +431,21 @@
         const id = localStorage.getItem('ghost_id');
         const email = localStorage.getItem('ghost_email');
         if(id) {
-            if (await checkBanStatus(id)) { logout(); return; }
+            if (await checkBanStatus(id)) return;
             myUid = id; userEmail = email;
             document.getElementById('myId').innerText = id; 
+            checkAdminStatus();
+            listenForBroadcast();
             showPage('dash-page'); 
         }
     }
 
-    // --- FAKE PIN LOGIC ---
     function doAdvancedLogin() {
         const pin = document.getElementById('loginPin').value;
         const id = document.getElementById('loginId').value;
         if(pin === FAKE_PIN) {
             myUid = "999-000-999"; 
             document.getElementById('myId').innerText = myUid;
-            document.getElementById('vault-status').innerText = "DUMMY MODE";
             showPage('dash-page');
         } else {
             doLogin();
@@ -241,7 +469,11 @@
         const eKey = btoa(userEmail).replace(/=/g,"");
         const snap = await db.ref('users/' + eKey).once('value');
         myUid = snap.exists() ? snap.val() : (Math.random().toString().slice(2,11).replace(/(\d{3})(\d{3})(\d{3})/, "$1-$2-$3"));
-        if(!snap.exists()) await db.ref('users/' + eKey).set(myUid);
+        const idKey = myUid.replace(/-/g,"");
+        if(!snap.exists()) {
+            await db.ref('users/' + eKey).set(myUid);
+            await db.ref('id_to_email/' + idKey).set(userEmail);
+        }
         localStorage.setItem('ghost_email', userEmail);
         doLoginWithId(myUid);
     }
@@ -254,23 +486,21 @@
 
     function doLoginWithId(id) {
         myUid = id; localStorage.setItem('ghost_id', id);
-        document.getElementById('myId').innerText = id; showPage('dash-page');
+        document.getElementById('myId').innerText = id; 
+        checkAdminStatus();
+        listenForBroadcast();
+        showPage('dash-page');
     }
 
     function startGhost(type) {
         chatType = type;
         partnerUid = document.getElementById('targetId').value;
         if(!partnerUid) return;
-        autoDestruct(getRoom());
         if(type === 'private') {
             db.ref('presence/' + myUid).set(getRoom());
             db.ref('presence/' + partnerUid).on('value', s => {
                 partnerActive = (s.val() === getRoom());
                 if(s.val() === getRoom()) openChatPage("Secure Private");
-            });
-            // Typing Listen
-            db.ref('typing/' + getRoom() + '/' + partnerUid).on('value', s => {
-                document.getElementById('typing-status').innerText = s.val() ? "Partner is typing..." : "";
             });
         } else {
             openChatPage("Group Chat");
@@ -287,30 +517,28 @@
         if(chatType !== 'private') return;
         db.ref('typing/' + getRoom() + '/' + myUid).set(true);
         clearTimeout(typingTimeout);
-        typingTimeout = setTimeout(() => {
-            db.ref('typing/' + getRoom() + '/' + myUid).set(false);
-        }, 2000);
+        typingTimeout = setTimeout(() => db.ref('typing/' + getRoom() + '/' + myUid).set(false), 2000);
     }
 
     function exitChat() {
         db.ref('presence/' + myUid).remove();
-        db.ref('typing/' + getRoom() + '/' + myUid).remove();
         showPage('dash-page');
     }
 
+    let lastMsgCount = 0;
     function listen() {
         db.ref('chats/' + getRoom() + '/msgs').on('value', snap => {
             const flow = document.getElementById('msg-flow'); flow.innerHTML = "";
+            let newCount = 0;
             snap.forEach(c => {
+                newCount++;
                 const d = c.val();
                 try {
                     const text = CryptoJS.AES.decrypt(d.content, SALT).toString(CryptoJS.enc.Utf8);
                     if(text === KILL_CODE && d.sender !== myUid) { logout(); return; }
                     const isMe = d.sender === myUid;
-                    
                     const readStatus = (d.wasRead || (isMe && partnerActive)) ? "read" : "";
                     const receipt = isMe ? `<span class="receipt ${readStatus}"><i class="fas fa-check-double"></i></span>` : "";
-
                     if(d.viewOnce && !isMe) {
                         flow.innerHTML += `<div class="msg other" onclick="viewAndDestroy('${c.key}')" style="cursor:pointer; font-style:italic;"><i class="fas fa-eye"></i> View Once Message</div>`;
                     } else {
@@ -318,48 +546,43 @@
                     }
                 } catch(e) {}
             });
+            if(newCount > lastMsgCount) {
+                const msgs = snap.val();
+                if(msgs) {
+                    const lastMsg = Object.values(msgs).pop();
+                    if(lastMsg.sender !== myUid) playSound('msgRec');
+                }
+            }
+            lastMsgCount = newCount;
             flow.scrollTop = flow.scrollHeight;
-        });
-    }
-
-    function viewAndDestroy(key) {
-        db.ref('chats/' + getRoom() + '/msgs/' + key).once('value', s => {
-            const d = s.val();
-            const text = CryptoJS.AES.decrypt(d.content, SALT).toString(CryptoJS.enc.Utf8);
-            alert("SENSITIVE MESSAGE: " + text.replace("👁️ ", ""));
-            db.ref('chats/' + getRoom() + '/msgs/' + key).remove();
         });
     }
 
     function sendMsg() {
         const val = document.getElementById('msgIn').value; if(!val) return;
+        if(!checkContentSafety(val)) return; 
         const enc = CryptoJS.AES.encrypt(val, SALT).toString();
-        db.ref('chats/' + getRoom() + '/msgs').push({ 
-            sender: myUid, 
-            content: enc, 
-            timestamp: Date.now(),
-            wasRead: partnerActive
-        });
+        db.ref('chats/' + getRoom() + '/msgs').push({ sender: myUid, content: enc, timestamp: Date.now(), wasRead: partnerActive });
+        playSound('msgSend');
         document.getElementById('msgIn').value = "";
-        db.ref('typing/' + getRoom() + '/' + myUid).set(false);
     }
 
     function sendViewOnce() {
         const val = document.getElementById('msgIn').value; if(!val) return;
+        if(!checkContentSafety(val)) return; 
         const enc = CryptoJS.AES.encrypt("👁️ " + val, SALT).toString();
-        db.ref('chats/' + getRoom() + '/msgs').push({ 
-            sender: myUid, content: enc, timestamp: Date.now(), viewOnce: true 
-        });
+        db.ref('chats/' + getRoom() + '/msgs').push({ sender: myUid, content: enc, timestamp: Date.now(), viewOnce: true });
+        playSound('msgSend');
         document.getElementById('msgIn').value = "";
     }
 
-    function burnChat() { db.ref('chats/' + getRoom()).remove(); }
+    function burnChat() { db.ref('chats/' + getRoom()).remove(); playSound('burn'); }
     function getRoom() { return chatType==='private' ? [myUid, partnerUid].sort().join("").replace(/-/g,"") : partnerUid.replace(/-/g,""); }
     function logout() { localStorage.clear(); location.reload(); }
     function copyID() { navigator.clipboard.writeText(myUid); alert("ID Copied!"); }
 
     window.addEventListener('keyup', (e) => { if (e.key === 'PrintScreen') triggerFlashbang(); });
-    window.onblur = () => document.getElementById('privacy-shield').style.display='flex';
+    window.onblur = () => { document.getElementById('privacy-shield').style.display='flex'; playSound('alert'); }
     window.onfocus = () => document.getElementById('privacy-shield').style.display='none';
 </script>
 </body>
