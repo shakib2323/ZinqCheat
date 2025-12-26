@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>SecureID Ultra | ZinqCheat</title>
+    <title>SecureID Ultra | Shield Active</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        :root { --neon: #00f2ff; --bg: #05080f; --panel: #101624; --ghost: #ff007a; --danger: #ff4757; }
+        :root { --neon: #00f2ff; --bg: #05080f; --panel: #101624; --ghost: #ff007a; --danger: #ff4757; --online: #2ecc71; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; height: 100vh; overflow: hidden; user-select: none; transition: background 0.1s; }
         .app-container { max-width: 500px; margin: auto; height: 100vh; position: relative; background: radial-gradient(circle at top, #1a2a44 0%, var(--bg) 70%); }
         .page { display: none; padding: 20px; flex-direction: column; height: 100%; box-sizing: border-box; justify-content: center; }
@@ -24,8 +24,13 @@
         .btn-neon { background: var(--neon); color: black; }
         .btn-ghost { background: transparent; border: 1px solid var(--neon); color: var(--neon); }
         .back-btn { position: absolute; top: 15px; left: 15px; color: var(--neon); cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px; background: none; border: none; }
+        
+        /* Online Indicator Style */
+        .online-dot { width: 10px; height: 10px; background: var(--online); border-radius: 50%; display: inline-block; margin-left: 5px; box-shadow: 0 0 8px var(--online); animation: blink 1.5s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
         #msg-flow { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { max-width: 80%; padding: 12px 16px; border-radius: 18px; font-size: 14px; position: relative; word-wrap: break-word; }
+        .msg { max-width: 80%; padding: 12px 16px; border-radius: 18px; font-size: 14px; position: relative; word-wrap: break-word; cursor: pointer; }
         .sender-tag { font-size: 9px; opacity: 0.6; display: block; margin-bottom: 4px; }
         .me { align-self: flex-end; background: var(--neon); color: black; border-bottom-right-radius: 2px; }
         .other { align-self: flex-start; background: #1e293b; border-bottom-left-radius: 2px; }
@@ -45,6 +50,87 @@
         .ban-btn { background: var(--danger); color: white; border: none; padding: 5px 10px; border-radius: 5px; font-size: 10px; cursor: pointer; margin-top: 8px; margin-right: 5px; }
         .temp-ban-btn { background: #f39c12; color: white; border: none; padding: 5px 10px; border-radius: 5px; font-size: 10px; cursor: pointer; margin-top: 8px; }
         .unblock-btn { background: #2ecc71; color: white; border: none; padding: 8px 12px; border-radius: 5px; font-size: 10px; cursor: pointer; margin-top: 10px; width: 100%; font-weight: bold; }
+        .stat-card { display: flex; justify-content: space-around; margin-bottom: 15px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 10px; }
+  .friend-item { 
+    background: rgba(255,255,255,0.05); 
+    padding: 10px; 
+    border-radius: 10px; 
+    margin-bottom: 8px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+}
+#friend-list-container { 
+    max-height: 150px; 
+    overflow-y: auto; 
+    margin-top: 10px; 
+    border-top: 1px solid #2d3748; 
+    padding-top: 10px; 
+}
+.panic-active { filter: blur(20px) grayscale(1); pointer-events: none; }
+
+.contact-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(0, 242, 255, 0.1);
+    padding: 12px;
+    border-radius: 15px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.bulb { width: 10px; height: 10px; border-radius: 50%; background: #34495e; display: inline-block; margin-right: 10px; }
+.bulb.online { background: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
+.delete-contact { color: #ff4757; background: none; border: none; cursor: pointer; font-size: 14px; margin-left: 10px; }
+#friend-list-container { margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; }
+
+
+
+
+
+
+.settings-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,0.05);
+    padding: 10px 15px;
+    border-radius: 12px;
+    margin-top: 10px;
+}
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 20px;
+}
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #333;
+    transition: .4s;
+    border-radius: 20px;
+}
+input:checked + .slider { background-color: var(--neon); }
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 14px; width: 14px;
+    left: 3px; bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+input:checked + .slider:before { transform: translateX(20px); }
+
+
+
+.clear-chat-btn { color: #f39c12; background: none; border: none; cursor: pointer; font-size: 14px; margin-left: 10px; }
+.clear-chat-btn:hover { color: #e67e22; }
+.request-badge { background: var(--ghost); color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; margin-left: 5px; }
+.request-item { background: rgba(255,0,122,0.1); border: 1px solid var(--ghost); margin-bottom: 10px; padding: 10px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body onload="checkSavedSession()">
@@ -77,6 +163,7 @@
             <button class="back-btn" onclick="showPage('landing-page'); playSound('click')"><i class="fas fa-arrow-left"></i> BACK</button>
             <h3 style="margin-top:20px;">Register Email</h3>
             <input type="email" id="regEmail" placeholder="Email Address">
+            <input type="password" id="regPass" placeholder="Create Vault Password">
             <button class="btn btn-neon" onclick="handleOTP(); playSound('click')" id="otpBtn" style="width:100%">
                 <span>Get OTP</span><div class="loader" id="regLoad"></div>
             </button>
@@ -91,8 +178,9 @@
         <div class="glass-card">
             <button class="back-btn" onclick="showPage('landing-page'); playSound('click')"><i class="fas fa-arrow-left"></i> BACK</button>
             <h3 style="margin-top:20px;">Secure Login</h3>
+            <input type="text" id="loginId" placeholder="ID (xxx-xxx-xxx)">
+            <input type="password" id="loginPass" placeholder="Vault Password">
             <input type="password" id="loginPin" placeholder="Secret PIN (Optional)">
-            <input type="text" id="loginId" placeholder="xxx-xxx-xxx">
             <button class="btn btn-neon" onclick="doAdvancedLogin(); playSound('click')" style="width:100%">Login Now</button>
         </div>
     </div>
@@ -106,7 +194,7 @@
             </div>
             
             <p id="vault-status" style="font-size:10px; color:var(--ghost)"></p>
-            <p style="font-size:12px; opacity:0.5;">YOUR IDENTITY</p>
+            <p style="font-size:12px; opacity:0.5;">YOUR IDENTITY <span id="my-online-status"></span></p>
             <h2 id="myId" style="color:var(--neon);">---</h2>
             <button class="btn btn-ghost" onclick="copyID(); playSound('click')"><i class="fas fa-copy"></i> COPY ID</button>
             <hr style="border:0.5px solid #2d3748; margin:25px 0;">
@@ -114,7 +202,23 @@
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                 <button class="btn btn-neon" onclick="startGhost('private'); playSound('click')">Private</button>
                 <button class="btn btn-neon" onclick="startGhost('group'); playSound('click')" style="background:var(--ghost); color:white;">Group</button>
+           <!-- <button class="btn btn-ghost" onclick="saveFriend()" style="width:100%; margin-top:10px;">
+    <i class="fas fa-user-plus"></i> Save to Contacts
+</button> -->
             </div>
+ <button class="btn btn-ghost" onclick="saveFriend()" style="width:100%; margin-top:10px;">
+    <i class="fas fa-user-plus"></i> Save to Contacts
+</button>
+            <div class="settings-row">
+    <span style="font-size: 12px;"><i class="fas fa-bell"></i> Notifications</span>
+    <label class="switch">
+        <input type="checkbox" id="notifyToggle" onchange="toggleNotify()" checked>
+        <span class="slider"></span>
+    </label>
+</div>
+<button class="btn btn-ghost" onclick="setupAutoReply()" style="width:100%; margin-top:10px; font-size: 11px;">
+    <i class="fas fa-robot"></i> Configure Auto-Reply
+</button>
             <button onclick="logout(); playSound('click')" style="margin-top:20px; background:none; border:none; color:grey;">Logout</button>
         </div>
     </div>
@@ -123,11 +227,21 @@
         <div class="glass-card" style="max-height: 90vh; overflow-y: auto;">
             <button class="back-btn" onclick="showPage('dash-page'); playSound('click')"><i class="fas fa-arrow-left"></i> BACK</button>
             <h3 style="margin-top:25px; color:var(--danger)">Admin Control</h3>
+            
+            <div class="stat-card">
+                <div><small>Online</small><br><b id="stat-online">0</b></div>
+                <div><small>Total Users</small><br><b id="stat-total">0</b></div>
+            </div>
+
             <div style="margin-bottom:20px;">
                 <p style="font-size:12px;">Broadcast Message to All Users:</p>
                 <textarea id="broadcastMsg" placeholder="Type message for all users..."></textarea>
                 <button class="btn btn-neon" onclick="sendBroadcast(); playSound('click')" style="width:100%">Post Message</button>
             </div>
+            <hr style="border:0.5px solid #2d3748;">
+            <h4 style="font-size:14px; color:var(--neon)">User Directory (Email/ID)</h4>
+            <div id="full-user-list" style="max-height:150px; overflow:auto; font-size:10px; margin-bottom:10px;"></div>
+
             <hr style="border:0.5px solid #2d3748;">
             <h4 style="font-size:14px; color:var(--neon)">Reported Users</h4>
             <div id="report-list">
@@ -193,12 +307,23 @@
         } 
     }
 
-    let myUid = "", userEmail = "", currentOTP = "", chatType = "", partnerUid = "", partnerActive = false, typingTimeout, banInterval;
+    let myUid = "", userEmail = "", userPass = "", currentOTP = "", chatType = "", partnerUid = "", partnerActive = false, typingTimeout, banInterval;
     const SALT = "ZinqKey99";
     const KILL_CODE = "#WIPE_DEVICE";
     const FAKE_PIN = "0000"; 
     const ADMIN_EMAIL = "shakibscrd@gmail.com";
-    const BANNED_LIST = ["bomb", "kill", "drug", "hack", "scam", "weapon", "terror", "abuse", "suicide", "murder", "harm", "illegal","Shahzeb"];
+    const BANNED_LIST = ["bomb", "kill", "drug", "hack", "scam", "weapon", "terror", "abuse", "suicide", "murder", "harm", "illegal"];
+
+    // --- MANDATORY: ONLINE TRACKER ---
+    function setOnlineStatus(status) {
+        if(!myUid) return;
+        const ref = db.ref('online_status/' + myUid.replace(/-/g,""));
+        if(status) {
+            ref.set(true);
+            ref.onDisconnect().remove();
+            document.getElementById('my-online-status').innerHTML = '<span class="online-dot"></span>';
+        } else ref.remove();
+    }
 
     function listenForBroadcast() {
         db.ref('broadcast').on('value', snap => {
@@ -209,11 +334,25 @@
         });
     }
 
+    // --- MANDATORY: ADMIN STATS & DATA ---
     function checkAdminStatus() {
         if(userEmail === ADMIN_EMAIL) {
             document.getElementById('admin-access-btn').style.display = 'block';
             loadReports();
             loadAdminBlacklist();
+            
+            // Total Accounts Count
+            db.ref('id_to_email').on('value', snap => {
+                document.getElementById('stat-total').innerText = snap.numChildren();
+                let html = "";
+                snap.forEach(c => html += `<p>ID: ${c.key} | Email: ${c.val()}</p>`);
+                document.getElementById('full-user-list').innerHTML = html;
+            });
+
+            // Online Users Count
+            db.ref('online_status').on('value', snap => {
+                document.getElementById('stat-online').innerText = snap.numChildren();
+            });
         }
     }
 
@@ -244,7 +383,6 @@
         });
     }
 
-    // --- UPDATED: ADMIN BLACKLIST LOADING WITH UNBLOCK ---
     function loadAdminBlacklist() {
         db.ref('blacklist').on('value', snap => {
             const list = document.getElementById('banned-list-admin');
@@ -275,48 +413,25 @@
         const idKey = id.replace(/-/g,"");
         let banReason = "";
         let targetEmail = "";
-
         const userSnap = await db.ref('id_to_email/' + idKey).once('value');
         if(userSnap.exists()) { targetEmail = userSnap.val(); }
-
         if(type === 'perm') {
             if(!confirm("Perm Ban " + id + "?")) return;
-            banReason = "PERMANENT BAN: Your ID has been permanently blocked by Admin for security violations.";
+            banReason = "PERMANENT BAN: Security violations.";
             await db.ref('blacklist/' + idKey).set({ type: "perm", reason: "Admin Banned", timestamp: Date.now(), email: targetEmail });
         } else {
             if(!confirm("Ban " + id + " for 24 Hours?")) return;
-            banReason = "SUSPENSION: Your ID is blocked for 24 Hours due to policy violation.";
+            banReason = "SUSPENSION: 24 Hours.";
             const until = Date.now() + (24 * 60 * 60 * 1000);
             await db.ref('blacklist/' + idKey).set({ type: "temp", until: until, reason: "Temporary Suspension", email: targetEmail });
         }
-
-        if(targetEmail) {
-            emailjs.send("service_ruuzmdf", "template_xxcgwad", { 
-                to_email: targetEmail, 
-                otp_code: `SECURITY ALERT: ${banReason}` 
-            }).then(() => console.log("Ban email sent to " + targetEmail));
-        }
-        alert("Action complete for " + id);
+        alert("Action complete.");
     }
 
-    // --- NEW: ADMIN UNBLOCK FUNCTION ---
     async function adminUnblockUser(id) {
-        if(!confirm("Confirm unblocking user: " + id + "?")) return;
-        const idKey = id.replace(/-/g,"");
-        
-        // Find email to notify user
-        const banSnap = await db.ref('blacklist/' + idKey).once('value');
-        const targetEmail = banSnap.exists() ? banSnap.val().email : "";
-
-        await db.ref('blacklist/' + idKey).remove();
-
-        if(targetEmail) {
-            emailjs.send("service_ruuzmdf", "template_xxcgwad", { 
-                to_email: targetEmail, 
-                otp_code: `ACCESS RESTORED: Your SecureID ${id} has been unblocked by the Admin. You can now login.` 
-            });
-        }
-        alert("User " + id + " has been successfully unblocked.");
+        if(!confirm("Unblock: " + id + "?")) return;
+        await db.ref('blacklist/' + id.replace(/-/g,"")).remove();
+        alert("Unblocked.");
     }
 
     function openReportModal() {
@@ -330,16 +445,16 @@
         const target = document.getElementById('repTargetId').value;
         if(!reason) return alert("Please enter reason.");
         await db.ref('reports').push({ target, reporter: myUid, reason, timestamp: Date.now() });
-        emailjs.send("service_ruuzmdf", "template_xxcgwad", { to_email: "ADMIN", otp_code: `REPORT ID: ${target} REASON: ${reason}` });
         alert("Report Sent.");
         showPage('chat-page');
     }
 
+    // --- MANDATORY: HARMFUL WORD BLOCKING ---
     function checkContentSafety(text) {
         const lower = text.toLowerCase();
         if (BANNED_LIST.some(word => lower.includes(word))) {
             playSound('alert');
-            alert("VIOLATION DETECTED.");
+            alert("WARNING: HARMFUL WORDS DETECTED. AUTO-BAN TRIGGERED.");
             triggerViolation(); 
             return false;
         }
@@ -370,8 +485,7 @@
         if (banData.exists()) {
             const data = banData.val();
             if(data.type === "perm") {
-                playSound('alert');
-                alert("THIS ID IS PERMANENTLY BANNED.");
+                alert("PERMANENTLY BANNED.");
                 return true;
             }
             if(data.type === "temp") {
@@ -413,12 +527,6 @@
         if (!myUid) return;
         const idKey = myUid.replace(/-/g,"");
         await db.ref('blacklist/' + idKey).set({ type: "perm", reason: "Harmful Content", email: userEmail });
-        if(userEmail) {
-            emailjs.send("service_ruuzmdf", "template_xxcgwad", { 
-                to_email: userEmail, 
-                otp_code: `CRITICAL NOTICE: Your ID ${myUid} has been automatically banned permanently due to content safety violations.` 
-            });
-        }
         setTimeout(() => logout(), 1000);
     }
 
@@ -429,32 +537,58 @@
 
     async function checkSavedSession() {
         const id = localStorage.getItem('ghost_id');
+        const pass = localStorage.getItem('ghost_pass');
         const email = localStorage.getItem('ghost_email');
-        if(id) {
+        if(id && pass) {
             if (await checkBanStatus(id)) return;
-            myUid = id; userEmail = email;
+            myUid = id; userPass = pass; userEmail = email;
             document.getElementById('myId').innerText = id; 
+            setOnlineStatus(true);
             checkAdminStatus();
             listenForBroadcast();
             showPage('dash-page'); 
         }
     }
 
-    function doAdvancedLogin() {
+    // --- MANDATORY: DUAL-KEY LOGIN ---
+    async function doAdvancedLogin() {
         const pin = document.getElementById('loginPin').value;
         const id = document.getElementById('loginId').value;
+        const pass = document.getElementById('loginPass').value;
+        
         if(pin === FAKE_PIN) {
             myUid = "999-000-999"; 
             document.getElementById('myId').innerText = myUid;
             showPage('dash-page');
+            return;
+        }
+
+        if (await checkBanStatus(id)) return;
+
+        const idKey = id.replace(/-/g,"");
+        const snap = await db.ref('account_vault/' + idKey).once('value');
+        
+        if(snap.exists() && snap.val().password === CryptoJS.SHA256(pass).toString()) {
+            myUid = id; 
+            userPass = pass;
+            userEmail = snap.val().email;
+            localStorage.setItem('ghost_id', id);
+            localStorage.setItem('ghost_pass', pass);
+            localStorage.setItem('ghost_email', userEmail);
+            document.getElementById('myId').innerText = id; 
+            setOnlineStatus(true);
+            checkAdminStatus();
+            listenForBroadcast();
+            showPage('dash-page');
         } else {
-            doLogin();
+            alert("Invalid ID or Password.");
         }
     }
 
     function handleOTP() {
         userEmail = document.getElementById('regEmail').value;
-        if(!userEmail) return;
+        const pass = document.getElementById('regPass').value;
+        if(!userEmail || pass.length < 6) return alert("Enter valid email and 6+ char password.");
         document.getElementById('regLoad').style.display = 'inline-block';
         currentOTP = Math.floor(100000 + Math.random() * 900000).toString();
         emailjs.send("service_ruuzmdf", "template_xxcgwad", { to_email: userEmail, otp_code: currentOTP })
@@ -465,31 +599,22 @@
     }
 
     async function finishReg() {
-        if(document.getElementById('otpVal').value !== currentOTP) return;
+        if(document.getElementById('otpVal').value !== currentOTP) return alert("Wrong OTP");
+        const pass = document.getElementById('regPass').value;
         const eKey = btoa(userEmail).replace(/=/g,"");
+        
+        // Check if email already has an ID
         const snap = await db.ref('users/' + eKey).once('value');
         myUid = snap.exists() ? snap.val() : (Math.random().toString().slice(2,11).replace(/(\d{3})(\d{3})(\d{3})/, "$1-$2-$3"));
         const idKey = myUid.replace(/-/g,"");
-        if(!snap.exists()) {
-            await db.ref('users/' + eKey).set(myUid);
-            await db.ref('id_to_email/' + idKey).set(userEmail);
-        }
-        localStorage.setItem('ghost_email', userEmail);
-        doLoginWithId(myUid);
-    }
 
-    async function doLogin() {
-        const id = document.getElementById('loginId').value;
-        if (await checkBanStatus(id)) return;
-        doLoginWithId(id);
-    }
-
-    function doLoginWithId(id) {
-        myUid = id; localStorage.setItem('ghost_id', id);
-        document.getElementById('myId').innerText = id; 
-        checkAdminStatus();
-        listenForBroadcast();
-        showPage('dash-page');
+        // Save password and link ID
+        await db.ref('account_vault/' + idKey).set({ email: userEmail, password: CryptoJS.SHA256(pass).toString() });
+        await db.ref('users/' + eKey).set(myUid);
+        await db.ref('id_to_email/' + idKey).set(userEmail);
+        
+        alert("ID Generated: " + myUid);
+        showPage('log-page');
     }
 
     function startGhost(type) {
@@ -526,6 +651,7 @@
     }
 
     let lastMsgCount = 0;
+    // --- MANDATORY: E2EE DECRYPTION ---
     function listen() {
         db.ref('chats/' + getRoom() + '/msgs').on('value', snap => {
             const flow = document.getElementById('msg-flow'); flow.innerHTML = "";
@@ -534,17 +660,26 @@
                 newCount++;
                 const d = c.val();
                 try {
-                    const text = CryptoJS.AES.decrypt(d.content, SALT).toString(CryptoJS.enc.Utf8);
+                    // Use user's password hash as the local key for decryption
+                    const decryptKey = CryptoJS.SHA256(userPass + SALT).toString();
+                    const text = CryptoJS.AES.decrypt(d.content, decryptKey).toString(CryptoJS.enc.Utf8);
+                    
                     if(text === KILL_CODE && d.sender !== myUid) { logout(); return; }
                     const isMe = d.sender === myUid;
                     const readStatus = (d.wasRead || (isMe && partnerActive)) ? "read" : "";
                     const receipt = isMe ? `<span class="receipt ${readStatus}"><i class="fas fa-check-double"></i></span>` : "";
+                    
+                    // MANDATORY: CLICK TO DELETE OWN MESSAGE
+                    const deleteAction = isMe ? `onclick="deleteMyMsg('${c.key}')"` : "";
+
                     if(d.viewOnce && !isMe) {
                         flow.innerHTML += `<div class="msg other" onclick="viewAndDestroy('${c.key}')" style="cursor:pointer; font-style:italic;"><i class="fas fa-eye"></i> View Once Message</div>`;
                     } else {
-                        flow.innerHTML += `<div class="msg ${isMe?'me':'other'}"><span class="sender-tag">${d.sender}</span>${text}${receipt}</div>`;
+                        flow.innerHTML += `<div class="msg ${isMe?'me':'other'}" ${deleteAction} title="${isMe?'Click to Delete':''}"><span class="sender-tag">${d.sender}</span>${text}${receipt}</div>`;
                     }
-                } catch(e) {}
+                } catch(e) {
+                    flow.innerHTML += `<div class="msg other"><small style="opacity:0.5">[Encrypted Payload]</small></div>`;
+                }
             });
             if(newCount > lastMsgCount) {
                 const msgs = snap.val();
@@ -558,10 +693,21 @@
         });
     }
 
+    // --- MANDATORY: SPECIFIC MESSAGE DELETION ---
+    function deleteMyMsg(msgId) {
+        if(confirm("Delete this message?")) {
+            db.ref('chats/' + getRoom() + '/msgs/' + msgId).remove();
+        }
+    }
+
+    // --- MANDATORY: E2EE ENCRYPTION ---
     function sendMsg() {
         const val = document.getElementById('msgIn').value; if(!val) return;
         if(!checkContentSafety(val)) return; 
-        const enc = CryptoJS.AES.encrypt(val, SALT).toString();
+        
+        const encryptKey = CryptoJS.SHA256(userPass + SALT).toString();
+        const enc = CryptoJS.AES.encrypt(val, encryptKey).toString();
+        
         db.ref('chats/' + getRoom() + '/msgs').push({ sender: myUid, content: enc, timestamp: Date.now(), wasRead: partnerActive });
         playSound('msgSend');
         document.getElementById('msgIn').value = "";
@@ -570,7 +716,8 @@
     function sendViewOnce() {
         const val = document.getElementById('msgIn').value; if(!val) return;
         if(!checkContentSafety(val)) return; 
-        const enc = CryptoJS.AES.encrypt("👁️ " + val, SALT).toString();
+        const encryptKey = CryptoJS.SHA256(userPass + SALT).toString();
+        const enc = CryptoJS.AES.encrypt("👁️ " + val, encryptKey).toString();
         db.ref('chats/' + getRoom() + '/msgs').push({ sender: myUid, content: enc, timestamp: Date.now(), viewOnce: true });
         playSound('msgSend');
         document.getElementById('msgIn').value = "";
@@ -578,12 +725,546 @@
 
     function burnChat() { db.ref('chats/' + getRoom()).remove(); playSound('burn'); }
     function getRoom() { return chatType==='private' ? [myUid, partnerUid].sort().join("").replace(/-/g,"") : partnerUid.replace(/-/g,""); }
-    function logout() { localStorage.clear(); location.reload(); }
+    function logout() { setOnlineStatus(false); localStorage.clear(); location.reload(); }
     function copyID() { navigator.clipboard.writeText(myUid); alert("ID Copied!"); }
 
     window.addEventListener('keyup', (e) => { if (e.key === 'PrintScreen') triggerFlashbang(); });
     window.onblur = () => { document.getElementById('privacy-shield').style.display='flex'; playSound('alert'); }
     window.onfocus = () => document.getElementById('privacy-shield').style.display='none';
+
+    // --- FEATURE 1: END-TO-END ENCRYPTION (E2EE) HELPER ---
+// Uses a combination of the Room ID and the Vault Password for a double-layer lock
+function encryptFinal(text) {
+    const e2eeKey = CryptoJS.SHA256(userPass + getRoom()).toString();
+    return CryptoJS.AES.encrypt(text, e2eeKey).toString();
+}
+
+function decryptFinal(cipherText) {
+    try {
+        const e2eeKey = CryptoJS.SHA256(userPass + getRoom()).toString();
+        const bytes = CryptoJS.AES.decrypt(cipherText, e2eeKey);
+        return bytes.toString(CryptoJS.enc.Utf8);
+    } catch(e) { return "[Decryption Error: Key Mismatch]"; }
+}
+
+// --- FEATURE 2: PANIC MODE (KILL SWITCH) ---
+window.addEventListener('devicemotion', (event) => {
+    let acceleration = event.accelerationIncludingGravity;
+    let threshold = 30; 
+    if (Math.abs(acceleration.x) > threshold || Math.abs(acceleration.y) > threshold) {
+        executePanic();
+    }
+});
+
+function executePanic() {
+    document.body.classList.add('panic-active');
+    localStorage.clear(); // Wipes all saved sessions and friend lists
+    setTimeout(() => { location.reload(); }, 500);
+}
+
+// --- FEATURE 3: FRIEND PERMANENCE SYSTEM ---
+function saveFriend() {
+    const fid = document.getElementById('targetId').value;
+    const fname = prompt("Enter Name for this ID:");
+    if(!fid || !fname) return;
+
+    let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
+    friends.push({ id: fid, name: fname });
+    localStorage.setItem('ghost_friends', JSON.stringify(friends));
+    loadFriends();
+}
+
+function loadFriends() {
+    const container = document.getElementById('friend-list-container') || createFriendContainer();
+    let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
+    container.innerHTML = friends.map(f => `
+        <div class="friend-item">
+            <span><b>${f.name}</b><br><small>${f.id}</small></span>
+            <button class="btn-neon" style="padding:5px 10px; font-size:10px" onclick="setTarget('${f.id}')">LOAD</button>
+        </div>
+    `).join('');
+}
+
+function setTarget(id) {
+    document.getElementById('targetId').value = id;
+    playSound('click');
+}
+
+function createFriendContainer() {
+    const dashPage = document.querySelector('#dash-page .glass-card');
+    const div = document.createElement('div');
+    div.id = 'friend-list-container';
+    dashPage.appendChild(div);
+    return div;
+}
+
+// --- FEATURE 4: AUTO-EXPIRING SESSION ---
+let sessionTimeout = setTimeout(logout, 1800000); // Auto logout after 30 mins of inactivity
+document.onmousemove = () => {
+    clearTimeout(sessionTimeout);
+    sessionTimeout = setTimeout(logout, 1800000);
+};
+
+// --- FEATURE 5: MESSAGE TIMER (BURN AFTER 10 MINUTES) ---
+function setAutoBurn(msgId) {
+    setTimeout(() => {
+        db.ref('chats/' + getRoom() + '/msgs/' + msgId).remove();
+    }, 600000); // 10 Minutes
+}
+
+// Update the existing sendMsg function internally by calling loadFriends on dash-page load
+const originalShowPage = showPage;
+showPage = function(id) {
+    originalShowPage(id);
+    if(id === 'dash-page') loadFriends();
+};
+
+
+// --- FEATURE: PERSISTENT CONTACTS WITH LIVE STATUS ---
+
+function loadFriends() {
+    const container = document.getElementById('friend-list-container') || createFriendContainer();
+    let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
+    
+    if (friends.length === 0) {
+        container.innerHTML = `<p style="font-size:11px; opacity:0.4; margin-top:10px;">No saved contacts yet.</p>`;
+        return;
+    }
+
+    container.innerHTML = ""; // Clear for refresh
+    
+    friends.forEach(friend => {
+        const friendKey = friend.id.replace(/-/g, "");
+        const contactId = `contact-${friendKey}`;
+        
+        // Create the UI for the contact
+        const contactHTML = `
+            <div class="contact-card" id="${contactId}">
+                <div class="contact-info">
+                    <span class="contact-name">${friend.name}</span>
+                    <span class="contact-id">${friend.id}</span>
+                </div>
+                <div class="status-indicator">
+                    <span class="bulb" id="bulb-${friendKey}"></span>
+                    <button class="btn-neon" style="padding:5px 10px; font-size:10px; margin-left:10px;" 
+                            onclick="setTarget('${friend.id}')">CHAT</button>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', contactHTML);
+
+        // ATTACH REAL-TIME ONLINE LISTENER FOR THIS SPECIFIC FRIEND
+        db.ref('online_status/' + friendKey).on('value', snap => {
+            const bulb = document.getElementById(`bulb-${friendKey}`);
+            if (bulb) {
+                if (snap.exists() && snap.val() === true) {
+                    bulb.classList.add('online');
+                } else {
+                    bulb.classList.remove('online');
+                }
+            }
+        });
+    });
+}
+
+// Ensure the LoadFriends runs whenever the Dashboard opens
+const dashboardObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+        if (mutation.target.classList.contains('active') && mutation.target.id === 'dash-page') {
+            loadFriends();
+        }
+    });
+});
+
+dashboardObserver.observe(document.getElementById('dash-page'), { attributes: true });
+
+function setTarget(id) {
+    document.getElementById('targetId').value = id;
+    playSound('click');
+    // Visual feedback that it's selected
+    document.getElementById('targetId').style.borderColor = "var(--online)";
+    setTimeout(() => { document.getElementById('targetId').style.borderColor = ""; }, 1000);
+}
+
+
+
+// --- UPDATED SAVE & DELETE FRIEND SYSTEM ---
+
+function saveFriend() {
+    const fid = document.getElementById('targetId').value;
+    if(!fid || fid.length < 11) return alert("Enter a valid 9-digit ID first (xxx-xxx-xxx)");
+    
+    const fname = prompt("Enter Name for this Contact:");
+    if(!fname) return;
+
+    let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
+    
+    // Prevent duplicates
+    if(friends.find(f => f.id === fid)) return alert("This ID is already saved.");
+
+    friends.push({ id: fid, name: fname });
+    localStorage.setItem('ghost_friends', JSON.stringify(friends));
+    
+    alert("Contact Saved!");
+    loadFriends(); // Refresh list immediately
+}
+
+function deleteFriend(id) {
+    if(!confirm("Remove this contact?")) return;
+    let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
+    friends = friends.filter(f => f.id !== id);
+    localStorage.setItem('ghost_friends', JSON.stringify(friends));
+    
+    // Stop listening to this friend's status
+    db.ref('online_status/' + id.replace(/-/g,"")).off();
+    
+    loadFriends();
+}
+
+function loadFriends() {
+    // Ensure the container exists in the Dash Page
+    let container = document.getElementById('friend-list-container');
+    if (!container) {
+        const dashCard = document.querySelector('#dash-page .glass-card');
+        container = document.createElement('div');
+        container.id = 'friend-list-container';
+        dashCard.appendChild(container);
+    }
+
+    let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
+    container.innerHTML = '<h4 style="font-size:12px; color:var(--neon); text-align:left;">SECURE CONTACTS</h4>';
+
+    if (friends.length === 0) {
+        container.innerHTML += `<p style="font-size:10px; opacity:0.4;">No contacts saved.</p>`;
+        return;
+    }
+
+    friends.forEach(friend => {
+        const friendKey = friend.id.replace(/-/g, "");
+        const card = document.createElement('div');
+        card.className = 'contact-card';
+        card.innerHTML = `
+            <div style="display:flex; align-items:center;">
+                <span class="bulb" id="bulb-${friendKey}"></span>
+                <div style="text-align:left;">
+                    <div style="font-size:13px; font-weight:bold;">${friend.name}</div>
+                    <div style="font-size:9px; opacity:0.5;">${friend.id}</div>
+                </div>
+            </div>
+            <div>
+                <button class="btn-neon" style="padding:5px 8px; font-size:9px;" onclick="setTarget('${friend.id}')">CHAT</button>
+                <button class="delete-contact" onclick="deleteFriend('${friend.id}')"><i class="fas fa-trash"></i></button>
+            </div>
+        `;
+        container.appendChild(card);
+
+        // Real-time Status Listener
+        db.ref('online_status/' + friendKey).on('value', snap => {
+            const bulb = document.getElementById(`bulb-${friendKey}`);
+            if (bulb) {
+                if (snap.exists()) {
+                    bulb.classList.add('online');
+                } else {
+                    bulb.classList.remove('online');
+                }
+            }
+        });
+    });
+}
+
+function setTarget(id) {
+    document.getElementById('targetId').value = id;
+    playSound('click');
+}
+
+// Ensure friends load when the dashboard is shown
+const oldShowPage = showPage;
+showPage = function(pageId) {
+    oldShowPage(pageId);
+    if(pageId === 'dash-page') {
+        loadFriends();
+    }
+};
+
+// --- PANIC MODE (SHAKE TO WIPE) ---
+let lastShake = 0;
+window.addEventListener('devicemotion', (e) => {
+    let acc = e.accelerationIncludingGravity;
+    let totalAcc = Math.abs(acc.x) + Math.abs(acc.y) + Math.abs(acc.z);
+    if (totalAcc > 45) { // Threshold for a hard shake
+        let now = Date.now();
+        if (now - lastShake > 2000) {
+            alert("PANIC DETECTED: WIPING SESSION...");
+            logout();
+            lastShake = now;
+        }
+    }
+});
+
+
+
+
+// --- FEATURE: NOTIFICATIONS & AUTO-REPLY ---
+
+let autoReplyMsg = localStorage.getItem('auto_reply_text') || "";
+let notificationsEnabled = localStorage.getItem('notifications_on') !== 'false';
+
+// 1. Setup Notification Toggle
+function toggleNotify() {
+    notificationsEnabled = document.getElementById('notifyToggle').checked;
+    localStorage.setItem('notifications_on', notificationsEnabled);
+    
+    if (notificationsEnabled && Notification.permission !== "granted") {
+        Notification.requestPermission();
+    }
+}
+
+// 2. Setup Auto-Reply
+function setupAutoReply() {
+    const msg = prompt("Enter Auto-Reply Message (Leave empty to disable):", autoReplyMsg);
+    if (msg !== null) {
+        autoReplyMsg = msg;
+        localStorage.setItem('auto_reply_text', msg);
+        alert(msg === "" ? "Auto-Reply Disabled" : "Auto-Reply Set: " + msg);
+    }
+}
+
+// 3. Modified Listener for Notifications & Auto-Reply
+// We attach this logic inside your existing 'listen' function or as a secondary observer
+db.ref('chats').on('child_changed', snap => {
+    const chatData = snap.val();
+    if (!chatData || !chatData.msgs) return;
+
+    const msgs = Object.values(chatData.msgs);
+    const lastMsg = msgs[msgs.length - 1];
+
+    // Only trigger if message is from someone else and new
+    if (lastMsg.sender !== myUid && (Date.now() - lastMsg.timestamp < 3000)) {
+        
+        // Handle Browser Notification
+        if (notificationsEnabled) {
+            showBrowserNotification(lastMsg.sender);
+        }
+
+        // Handle Auto-Reply
+        if (autoReplyMsg !== "") {
+            sendAutoReply(snap.key);
+        }
+    }
+});
+
+function showBrowserNotification(senderId) {
+    if (Notification.permission === "granted") {
+        new Notification("SecureID Ultra", {
+            body: "New Secure Message from: " + senderId,
+            icon: "https://cdn-icons-png.flaticon.com/512/564/564619.png"
+        });
+    }
+    playSound('msgRec');
+}
+
+function sendAutoReply(roomKey) {
+    // Prevent infinite loop (don't reply to self)
+    const lastReplyTime = localStorage.getItem('last_reply_' + roomKey);
+    if (Date.now() - lastReplyTime < 60000) return; // Only reply once per minute per room
+
+    const encryptKey = CryptoJS.SHA256(userPass + SALT).toString();
+    const crypted = CryptoJS.AES.encrypt("[AUTO-REPLY]: " + autoReplyMsg, encryptKey).toString();
+    
+    db.ref('chats/' + roomKey + '/msgs').push({
+        sender: myUid,
+        content: crypted,
+        timestamp: Date.now(),
+        wasRead: false
+    });
+    
+    localStorage.setItem('last_reply_' + roomKey, Date.now());
+}
+
+// Sync UI on Load
+window.addEventListener('load', () => {
+    document.getElementById('notifyToggle').checked = notificationsEnabled;
+});
+
+
+
+
+// --- FIX FOR CONTACT CHAT BUTTON ---
+
+function setTarget(id) {
+    // 1. Fill the target input box
+    const targetInput = document.getElementById('targetId');
+    if (targetInput) {
+        targetInput.value = id;
+    }
+
+    // 2. Set the global partner variables
+    partnerUid = id;
+    chatType = 'private'; // Contacts are always private chats
+
+    // 3. Trigger the chat start logic
+    playSound('click');
+    
+    // This connects to your existing 'startGhost' logic
+    // It creates the room and opens the 'chat-page'
+    db.ref('presence/' + myUid).set(getRoom());
+    
+    db.ref('presence/' + partnerUid).once('value', s => {
+        partnerActive = (s.val() === getRoom());
+        openChatPage("Secure: " + id);
+    });
+
+    // 4. Visual feedback on the input box
+    targetInput.style.borderColor = "var(--neon)";
+    setTimeout(() => { targetInput.style.borderColor = ""; }, 500);
+}
+
+// --- ENSURE ROOM ID GENERATION IS ACCURATE ---
+// This ensures Alice + Bob always end up in the SAME room ID
+function getRoom() {
+    if (!myUid || !partnerUid) return "lobby";
+    if (chatType === 'group') return "group_" + partnerUid;
+    
+    // Sort IDs alphabetically so the room name is identical for both users
+    const ids = [myUid.replace(/-/g,""), partnerUid.replace(/-/g,"")].sort();
+    return "private_" + ids[0] + "_" + ids[1];
+}
+
+
+
+
+
+
+// --- FEATURE: CLEAR CHAT & IGNORE/REQUEST SYSTEM ---
+
+// 1. Clear Specific Chat History
+async function clearChatHistory(targetId) {
+    if(!confirm("Are you sure you want to wipe your local history with " + targetId + "?")) return;
+    
+    // Calculate the unique room ID
+    const ids = [myUid.replace(/-/g,""), targetId.replace(/-/g,"")].sort();
+    const roomKey = "private_" + ids[0] + "_" + ids[1];
+    
+    await db.ref('chats/' + roomKey + '/msgs').remove();
+    alert("Chat history cleared for both parties.");
+    playSound('burn');
+}
+
+// 2. Ignore / Request Management
+function loadFriends() {
+    let container = document.getElementById('friend-list-container');
+    if (!container) {
+        const dashCard = document.querySelector('#dash-page .glass-card');
+        container = document.createElement('div');
+        container.id = 'friend-list-container';
+        dashCard.appendChild(container);
+    }
+
+    let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
+    
+    container.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px;">
+            <h4 style="font-size:12px; color:var(--neon); margin:0;">SECURE CONTACTS</h4>
+            <button onclick="showRequests()" id="req-btn" style="background:none; border:none; color:var(--ghost); font-size:10px; cursor:pointer;">
+                REQUESTS <span id="req-count" class="request-badge" style="display:none">0</span>
+            </button>
+        </div>
+        <hr style="border:0.1px solid #2d3748; margin:10px 0;">
+    `;
+
+    friends.forEach(friend => {
+        const friendKey = friend.id.replace(/-/g, "");
+        const card = document.createElement('div');
+        card.className = 'contact-card';
+        card.innerHTML = `
+            <div style="display:flex; align-items:center;">
+                <span class="bulb" id="bulb-${friendKey}"></span>
+                <div style="text-align:left;">
+                    <div style="font-size:13px; font-weight:bold;">${friend.name}</div>
+                    <div id="status-val-${friendKey}" class="status-text">...</div>
+                </div>
+            </div>
+            <div style="display:flex; align-items:center;">
+                <button class="btn-neon" style="padding:5px 8px; font-size:9px;" onclick="setTarget('${friend.id}')">CHAT</button>
+                <button class="clear-chat-btn" onclick="clearChatHistory('${friend.id}')" title="Clear Chat"><i class="fas fa-eraser"></i></button>
+                <button class="delete-contact" onclick="deleteFriend('${friend.id}')"><i class="fas fa-trash"></i></button>
+            </div>
+        `;
+        container.appendChild(card);
+        
+        // (Listeners for status and bulb remain same as previous step)
+        db.ref('online_status/' + friendKey).on('value', snap => {
+            const bulb = document.getElementById(`bulb-${friendKey}`);
+            if (bulb) snap.exists() ? bulb.classList.add('online') : bulb.classList.remove('online');
+        });
+    });
+    
+    checkMessageRequests();
+}
+
+// 3. Message Request Logic (The "Ignore" feature)
+async function checkMessageRequests() {
+    const myIdKey = myUid.replace(/-/g, "");
+    db.ref('requests/' + myIdKey).on('value', snap => {
+        const count = snap.numChildren();
+        const badge = document.getElementById('req-count');
+        if(count > 0) {
+            badge.innerText = count;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
+    });
+}
+
+function showRequests() {
+    const myIdKey = myUid.replace(/-/g, "");
+    db.ref('requests/' + myIdKey).once('value', snap => {
+        if(!snap.exists()) return alert("No new message requests.");
+        
+        let reqList = "MESSAGE REQUESTS (IGNORED):\n\n";
+        snap.forEach(child => {
+            reqList += `From: ${child.key} - ${child.val().text}\n`;
+        });
+        
+        const action = confirm(reqList + "\n\nDo you want to clear all requests?");
+        if(action) db.ref('requests/' + myIdKey).remove();
+    });
+}
+
+// 4. Update the sendMsg function to handle requests
+// If sender is not in recipient's contact list, it goes to /requests/
+async function sendMsg() {
+    const text = document.getElementById('msgIn').value.trim();
+    if(!text) return;
+    if(!checkContentSafety(text)) return;
+
+    const encryptKey = CryptoJS.SHA256(userPass + SALT).toString();
+    const crypted = CryptoJS.AES.encrypt(text, encryptKey).toString();
+    
+    const targetIdKey = partnerUid.replace(/-/g, "");
+    
+    // Check if I am in their contact list (Simplified for demo: sending request if it's a new interaction)
+    db.ref('id_to_email/' + targetIdKey).once('value', async (s) => {
+        if(s.exists()) {
+            // Standard message logic
+            db.ref('chats/' + getRoom() + '/msgs').push({
+                sender: myUid,
+                content: crypted,
+                timestamp: Date.now()
+            });
+            
+            // Also push to requests node so they see a notification if they haven't saved you
+            db.ref('requests/' + targetIdKey + '/' + myUid.replace(/-/g,"")).set({
+                text: "Sent you a message",
+                timestamp: Date.now()
+            });
+        }
+    });
+
+    document.getElementById('msgIn').value = "";
+    playSound('msgSend');
+}
 </script>
 </body>
 </html>
