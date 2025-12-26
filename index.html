@@ -8,6 +8,11 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+
+
+
+
+
         :root { --neon: #00f2ff; --bg: #05080f; --panel: #101624; --ghost: #ff007a; --danger: #ff4757; --online: #2ecc71; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; height: 100vh; overflow: hidden; user-select: none; transition: background 0.1s; }
         .app-container { max-width: 500px; margin: auto; height: 100vh; position: relative; background: radial-gradient(circle at top, #1a2a44 0%, var(--bg) 70%); }
@@ -208,6 +213,57 @@ input:checked + .slider:before { transform: translateX(20px); }
     padding-top: 90px;
     overflow-y: auto;
 }
+
+
+
+
+
+/* Styling the Typing Indicator */
+#typing-status {
+    height: 20px;
+    font-size: 11px;
+    color: var(--neon);
+    padding-left: 15px;
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: opacity 0.3s ease;
+}
+
+/* Animation for the three dots */
+.typing-dots::after {
+    content: '...';
+    display: inline-block;
+    width: 12px;
+    animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+    0%, 20% { content: ''; }
+    40% { content: '.'; }
+    60% { content: '..'; }
+    80%, 100% { content: '...'; }
+}
+
+.bulb {
+    width: 8px;
+    height: 8px;
+    background: #555; /* Offline color */
+    border-radius: 50%;
+    transition: 0.3s ease;
+}
+
+.bulb.online-now {
+    background: #00ff88 !important; /* Neon Green */
+    box-shadow: 0 0 10px #00ff88;
+}
+
+
+
+
+
+
     </style>
 </head>
 <body onload="checkSavedSession()">
@@ -346,6 +402,17 @@ input:checked + .slider:before { transform: translateX(20px); }
         <div class="chat-nav">
             <button onclick="exitChat(); playSound('click')" style="background:none; border:none; color:var(--neon);"><i class="fas fa-chevron-left"></i></button>
             <span id="chat-title" style="color:var(--neon)"></span>
+
+
+
+            <div class="chat-header">
+    <!-- <button onclick="showPage('dash-page')"><i class="fas fa-arrow-left"></i></button> -->
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <span id="chat-title"></span>
+        <span id="live-chat-bulb" class="bulb" style="width: 8px; height: 8px;"></span>
+    </div>
+</div>
+
             <div style="display:flex; gap:10px; align-items:center;">
                 <button onclick="openReportModal(); playSound('click')" style="background:none; border:none; color:var(--danger); font-size:12px; font-weight:bold; cursor:pointer;"><i class="fas fa-flag"></i> REPORT</button>
                 <button onclick="sendViewOnce(); playSound('click')" class="view-once-btn" title="View Once"><i class="fas fa-eye"></i></button>
@@ -778,17 +845,66 @@ input:checked + .slider:before { transform: translateX(20px); }
     }
 
     // --- MANDATORY: E2EE ENCRYPTION ---
-    function sendMsg() {
-        const val = document.getElementById('msgIn').value; if(!val) return;
-        if(!checkContentSafety(val)) return; 
+    // function sendMsg() {
+    //     const val = document.getElementById('msgIn').value; if(!val) return;
+    //     if(!checkContentSafety(val)) return; 
         
-        const encryptKey = CryptoJS.SHA256(userPass + SALT).toString();
-        const enc = CryptoJS.AES.encrypt(val, encryptKey).toString();
+    //     const encryptKey = CryptoJS.SHA256(userPass + SALT).toString();
+    //     const enc = CryptoJS.AES.encrypt(val, encryptKey).toString();
         
-        db.ref('chats/' + getRoom() + '/msgs').push({ sender: myUid, content: enc, timestamp: Date.now(), wasRead: partnerActive });
-        playSound('msgSend');
-        document.getElementById('msgIn').value = "";
-    }
+    //     db.ref('chats/' + getRoom() + '/msgs').push({ sender: myUid, content: enc, timestamp: Date.now(), wasRead: partnerActive });
+    //     playSound('msgSend');
+    //     document.getElementById('msgIn').value = "";
+    // }
+
+
+    // --- 1. FAST SEND MESSAGE (No Delay) ---
+function sendMsg() {
+    const input = document.getElementById('msgIn');
+    const text = input.value.trim();
+    if(!text || !partnerUid) return;
+
+    const room = getRoom();
+    const key = CryptoJS.SHA256(room + SALT).toString();
+    const crypted = CryptoJS.AES.encrypt(text, key).toString();
+    
+    // Direct push (await hatane se slow feel nahi hoga)
+    db.ref('chats/' + room + '/msgs').push({
+        sender: myUid,
+        content: crypted,
+        timestamp: Date.now(),
+        seen: false
+    });
+
+    input.value = ""; 
+    input.focus(); // Keypad stable rahega
+    
+    const flow = document.getElementById('msg-flow');
+    flow.scrollTop = flow.scrollHeight;
+    playSound('msgSend');
+}
+
+// --- 2. STABLE LIVE BULB (Using Global Status) ---
+function listenToPartnerPresence() {
+    if (!partnerUid) return;
+    const partnerKey = partnerUid.replace(/[^a-zA-Z0-9]/g, ""); 
+    
+    // Hum wahi node use kar rahe hain jo bahar work kar raha hai
+    db.ref('online_status/' + partnerKey).on('value', (snap) => {
+        const bulb = document.getElementById('live-chat-bulb');
+        const statusText = document.getElementById('live-status-text');
+        
+        if (snap.exists()) {
+            bulb.className = "bulb online-now"; // Green color
+            statusText.innerText = "Active Now";
+            statusText.style.color = "#00ff88";
+        } else {
+            bulb.className = "bulb"; // Gray color
+            statusText.innerText = "Offline";
+            statusText.style.color = "#888";
+        }
+    });
+}
 
     function sendViewOnce() {
         const val = document.getElementById('msgIn').value; if(!val) return;
@@ -1270,10 +1386,7 @@ function loadFriends() {
         container.appendChild(card);
         
         // (Listeners for status and bulb remain same as previous step)
-        db.ref('online_status/' + friendKey).on('value', snap => {
-            const bulb = document.getElementById(`bulb-${friendKey}`);
-            if (bulb) snap.exists() ? bulb.classList.add('online') : bulb.classList.remove('online');
-        });
+       c
     });
     
     checkMessageRequests();
@@ -1311,38 +1424,88 @@ function showRequests() {
 
 // 4. Update the sendMsg function to handle requests
 // If sender is not in recipient's contact list, it goes to /requests/
-async function sendMsg() {
-    const text = document.getElementById('msgIn').value.trim();
-    if(!text) return;
-    if(!checkContentSafety(text)) return;
+// async function sendMsg() {
+//     const text = document.getElementById('msgIn').value.trim();
+//     if(!text) return;
+//     if(!checkContentSafety(text)) return;
 
-    const encryptKey = CryptoJS.SHA256(userPass + SALT).toString();
-    const crypted = CryptoJS.AES.encrypt(text, encryptKey).toString();
+//     const encryptKey = CryptoJS.SHA256(userPass + SALT).toString();
+//     const crypted = CryptoJS.AES.encrypt(text, encryptKey).toString();
     
-    const targetIdKey = partnerUid.replace(/-/g, "");
+//     const targetIdKey = partnerUid.replace(/-/g, "");
     
-    // Check if I am in their contact list (Simplified for demo: sending request if it's a new interaction)
-    db.ref('id_to_email/' + targetIdKey).once('value', async (s) => {
-        if(s.exists()) {
-            // Standard message logic
-            db.ref('chats/' + getRoom() + '/msgs').push({
-                sender: myUid,
-                content: crypted,
-                timestamp: Date.now()
-            });
+//     // Check if I am in their contact list (Simplified for demo: sending request if it's a new interaction)
+//     db.ref('id_to_email/' + targetIdKey).once('value', async (s) => {
+//         if(s.exists()) {
+//             // Standard message logic
+//             db.ref('chats/' + getRoom() + '/msgs').push({
+//                 sender: myUid,
+//                 content: crypted,
+//                 timestamp: Date.now()
+//             });
             
-            // Also push to requests node so they see a notification if they haven't saved you
-            db.ref('requests/' + targetIdKey + '/' + myUid.replace(/-/g,"")).set({
-                text: "Sent you a message",
-                timestamp: Date.now()
-            });
-        }
-    });
+//             // Also push to requests node so they see a notification if they haven't saved you
+//             db.ref('requests/' + targetIdKey + '/' + myUid.replace(/-/g,"")).set({
+//                 text: "Sent you a message",
+//                 timestamp: Date.now()
+//             });
+//         }
+//     });
 
-    document.getElementById('msgIn').value = "";
-    playSound('msgSend');
+//     document.getElementById('msgIn').value = "";
+//     playSound('msgSend');
+// }
+
+// --- FULL STABLE SEND FUNCTION (Keypad Fixed) ---
+
+async function sendMsg() {
+    const input = document.getElementById('msgIn');
+    const text = input.value.trim();
+    
+    // 1. Agar text khali hai toh kuch mat karo
+    if(!text || !partnerUid) return;
+
+    // 2. Encryption Logic (Shared Room Key use kar rahe hain)
+    const room = getRoom();
+    const key = CryptoJS.SHA256(room + SALT).toString();
+    const crypted = CryptoJS.AES.encrypt(text, key).toString();
+    
+    // 3. Firebase mein message bhejna
+    try {
+        await db.ref('chats/' + room + '/msgs').push({
+            sender: myUid,
+            content: crypted,
+            timestamp: Date.now(),
+            seen: false
+        });
+
+        // Typing status hatao message bhejte hi
+        db.ref('typing/' + room + '/' + myUid.replace(/-/g, "")).remove();
+
+        // 4. --- KEYPAD KO ROKNE KA LOGIC ---
+        input.value = ""; // Text box khali karo
+        
+        // Mobile ko force karo ki keypad khula rahe
+        input.focus(); 
+        
+        // 5. Chat window ko auto-scroll karo niche
+        const flow = document.getElementById('msg-flow');
+        if(flow) flow.scrollTop = flow.scrollHeight;
+
+        playSound('msgSend');
+
+    } catch (e) {
+        console.error("Sending failed:", e);
+    }
 }
 
+// 6. "Enter" button press karne par keypad hide nahi hoga
+document.getElementById('msgIn').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault(); // Default "Submit/Hide" action ko block karo
+        sendMsg();
+    }
+});
 
 
 
@@ -1624,6 +1787,105 @@ function loadFriends() {
         });
     });
 }
+
+
+
+
+
+// --- LIVE CHAT PRESENCE (GREEN BULB) ---
+
+function trackChatPresence() {
+    const room = getRoom();
+    const myKey = myUid.replace(/-/g, "");
+    const partnerKey = partnerUid.replace(/-/g, "");
+
+    // 1. Jab main chat page pe aaun, toh Firebase ko batao
+    const presenceRef = db.ref(`chat_presence/${room}/${myKey}`);
+    presenceRef.set(true);
+    presenceRef.onDisconnect().remove(); // App band hote hi status hata do
+
+    // 2. Partner ka status check karo
+    db.ref(`chat_presence/${room}/${partnerKey}`).on('value', (snap) => {
+        const bulb = document.getElementById('live-chat-bulb');
+        if (snap.exists() && snap.val() === true) {
+            bulb.classList.add('online-now');
+        } else {
+            bulb.classList.remove('online-now');
+        }
+    });
+}
+
+// Is function ko openChatPage ke andar call karein
+const originalChatOpen = openChatPage;
+openChatPage = function(title) {
+    originalChatOpen(title);
+    trackChatPresence(); // Bulb check shuru karo
+};
+
+// Jab chat se bahar jayein toh status remove karein
+function leaveChat() {
+    const room = getRoom();
+    const myKey = myUid.replace(/-/g, "");
+    db.ref(`chat_presence/${room}/${myKey}`).remove();
+    showPage('dash-page');
+}
+
+
+
+
+
+
+
+
+
+
+
+// --- FIXED GREEN BULB LOGIC ---
+
+function updateChatPresence(status) {
+    if (!myUid || !partnerUid) return;
+    
+    const room = getRoom();
+    const myKey = myUid.replace(/[^a-zA-Z0-9]/g, ""); // Clean ID for Firebase
+    
+    if (status === 'online') {
+        db.ref(`chat_presence/${room}/${myKey}`).set(true);
+        db.ref(`chat_presence/${room}/${myKey}`).onDisconnect().remove();
+    } else {
+        db.ref(`chat_presence/${room}/${myKey}`).remove();
+    }
+}
+
+function listenToPartnerPresence() {
+    const room = getRoom();
+    const partnerKey = partnerUid.replace(/[^a-zA-Z0-9]/g, ""); 
+    
+    db.ref(`chat_presence/${room}/${partnerKey}`).on('value', (snap) => {
+        const bulb = document.getElementById('live-chat-bulb');
+        const statusText = document.getElementById('live-status-text');
+        
+        if (snap.exists() && snap.val() === true) {
+            if(bulb) bulb.classList.add('online-now');
+            if(statusText) {
+                statusText.innerText = "Active Now";
+                statusText.classList.add('active');
+            }
+        } else {
+            if(bulb) bulb.classList.remove('online-now');
+            if(statusText) {
+                statusText.innerText = "Offline";
+                statusText.classList.remove('active');
+            }
+        }
+    });
+}
+
+// Apne existing openChatPage function ke niche ye do lines add karein:
+// updateChatPresence('online');
+// listenToPartnerPresence();
+
+// Aur jab user page change kare (back jaye ya logout kare):
+// updateChatPresence('offline');
 </script>
 </body>
 </html>
