@@ -60,13 +60,42 @@
     justify-content: space-between; 
     align-items: center; 
 }
-#friend-list-container { 
+/* #friend-list-container { 
     max-height: 150px; 
     overflow-y: auto; 
     margin-top: 10px; 
     border-top: 1px solid #2d3748; 
     padding-top: 10px; 
+} */
+
+
+
+#friend-list-container { 
+    height: 220px;            /* Fixed height for the box */
+    overflow-y: auto;         /* Enable vertical scrolling only inside this box */
+    overflow-x: hidden;       /* Prevent horizontal shaking */
+    background: rgba(0, 0, 0, 0.25); 
+    border-radius: 12px;
+    padding: 10px;
+    margin-top: 15px;
+    border: 1px solid rgba(0, 242, 255, 0.1);
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5); /* Inner shadow for "depth" */
 }
+
+/* Customizing the scrollbar for that Secure/Neon look */
+#friend-list-container::-webkit-scrollbar {
+    width: 5px;
+}
+#friend-list-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+#friend-list-container::-webkit-scrollbar-thumb {
+    background: var(--neon);
+    border-radius: 5px;
+}
+
+
+
 .panic-active { filter: blur(20px) grayscale(1); pointer-events: none; }
 
 .contact-card {
@@ -131,6 +160,54 @@ input:checked + .slider:before { transform: translateX(20px); }
 .clear-chat-btn:hover { color: #e67e22; }
 .request-badge { background: var(--ghost); color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; margin-left: 5px; }
 .request-item { background: rgba(255,0,122,0.1); border: 1px solid var(--ghost); margin-bottom: 10px; padding: 10px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
+    #friend-list-container { 
+    max-height: 250px; /* Limits height so it doesn't grow forever */
+    overflow-y: auto;  /* Allows scrolling inside the list */
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Adds a massive space at the very bottom of the dashboard 
+   so you can scroll high above the keyboard */
+.keyboard-spacer {
+    height: 50px; 
+    width: 100%;
+    pointer-events: none; /* User can't click this empty space */
+}
+
+/* Makes the scrollbar look clean and neon */
+#friend-list-container::-webkit-scrollbar { width: 4px; }
+#friend-list-container::-webkit-scrollbar-thumb { background: var(--neon); border-radius: 10px; }
+
+
+/* Push the entire dashboard down from the top status bar */
+#dash-page .glass-card {
+    margin-top: 60px !important; 
+    margin-bottom: 20px;
+}
+
+/* Style for the Admin Notice to make it stand out at the top */
+.admin-notice-box {
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid #ffc107;
+    color: #ffc107;
+    padding: 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    margin-bottom: 20px;
+    text-align: center;
+    width: 100%;
+    display: block;
+}
+
+/* Ensure the main container doesn't clip the top */
+.page {
+    padding-top: 90px;
+    overflow-y: auto;
+}
     </style>
 </head>
 <body onload="checkSavedSession()">
@@ -1420,6 +1497,132 @@ function getRoom() {
     // Alphabetical sort ensures User A and User B always share the same ID
     const ids = [myUid.replace(/-/g,""), partnerUid.replace(/-/g,"")].sort();
     return "private_" + ids[0] + "_" + ids[1];
+}
+
+
+
+// --- KEYBOARD & SPACING FIX ---
+
+function applyDashboardSpacing() {
+    const dashCard = document.querySelector('#dash-page .glass-card');
+    
+    // Check if spacer already exists, if not, create it
+    if (!document.querySelector('.keyboard-spacer')) {
+        const spacer = document.createElement('div');
+        spacer.className = 'keyboard-spacer';
+        dashCard.appendChild(spacer);
+    }
+}
+
+// Update the loadFriends function to ensure it's tidy
+const originalLoadFriends = loadFriends;
+loadFriends = function() {
+    originalLoadFriends(); // Run your existing friend logic
+    applyDashboardSpacing(); // Add the extra space at the bottom
+};
+
+// Auto-scroll to the top of the contact list when "Save" is clicked
+function saveFriend() {
+    const fid = document.getElementById('targetId').value;
+    if(!fid) return alert("Enter ID first");
+    
+    const fname = prompt("Enter Name:");
+    if(!fname) return;
+
+    let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
+    friends.push({ id: fid, name: fname });
+    localStorage.setItem('ghost_friends', JSON.stringify(friends));
+    
+    loadFriends();
+    
+    // Scroll the view so the user sees the new contact added
+    document.getElementById('friend-list-container').scrollIntoView({ behavior: 'smooth' });
+}
+
+
+
+// --- ADMIN NOTICE SPACING FIX ---
+
+function displayAdminNotice(message) {
+    const dashCard = document.querySelector('#dash-page .glass-card');
+    
+    // Create notice element if it doesn't exist
+    let noticeBox = document.getElementById('admin-notice-display');
+    if (!noticeBox) {
+        noticeBox = document.createElement('div');
+        noticeBox.id = 'admin-notice-display';
+        noticeBox.className = 'admin-notice-box';
+        // Insert it at the very top of the card
+        dashCard.prepend(noticeBox);
+    }
+    
+    noticeBox.innerHTML = `<i class="fas fa-exclamation-triangle"></i> NOTICE: ${message}`;
+}
+
+// Example: Calling the notice (Replace with your actual Firebase listener)
+// db.ref('admin/notice').on('value', snap => {
+//    if(snap.exists()) displayAdminNotice(snap.val());
+// });
+
+
+// --- INTERNAL SCROLLING LOGIC ---
+
+function loadFriends() {
+    let container = document.getElementById('friend-list-container');
+    
+    // Create the container if it doesn't exist
+    if (!container) {
+        const dashCard = document.querySelector('#dash-page .glass-card');
+        container = document.createElement('div');
+        container.id = 'friend-list-container';
+        dashCard.appendChild(container);
+    }
+
+    let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
+    
+    // Header for the box
+    container.innerHTML = `
+        <div style="position: sticky; top: 0; background: #1a1a1a; padding-bottom: 5px; z-index: 5;">
+            <h4 style="font-size:11px; color:var(--neon); margin:0;">SECURE CONTACTS (${friends.length})</h4>
+        </div>
+    `;
+
+    if (friends.length === 0) {
+        container.innerHTML += `<p style="font-size:10px; opacity:0.4; text-align:center; margin-top:20px;">No saved contacts.</p>`;
+        return;
+    }
+
+    // Add each friend to the container
+    friends.forEach(friend => {
+        const friendKey = friend.id.replace(/-/g, "");
+        const card = document.createElement('div');
+        card.className = 'contact-card';
+        card.innerHTML = `
+            <div style="display:flex; align-items:center;">
+                <span class="bulb" id="bulb-${friendKey}"></span>
+                <div style="text-align:left;">
+                    <div style="font-size:12px; font-weight:bold;">${friend.name}</div>
+                    <div id="status-val-${friendKey}" style="font-size:8px; opacity:0.6;">Connecting...</div>
+                </div>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button class="btn-neon" style="padding:4px 8px; font-size:9px;" onclick="setTarget('${friend.id}')">CHAT</button>
+                <button class="delete-contact" onclick="deleteFriend('${friend.id}')"><i class="fas fa-trash"></i></button>
+            </div>
+        `;
+        container.appendChild(card);
+
+        // Re-attach status listeners
+        db.ref('online_status/' + friendKey).on('value', s => {
+            const b = document.getElementById(`bulb-${friendKey}`);
+            if(b) s.exists() ? b.classList.add('online') : b.classList.remove('online');
+        });
+        
+        db.ref('user_status/' + friendKey).on('value', s => {
+            const st = document.getElementById(`status-val-${friendKey}`);
+            if(st) st.innerText = s.exists() ? s.val() : "No status";
+        });
+    });
 }
 </script>
 </body>
