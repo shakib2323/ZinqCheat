@@ -1265,6 +1265,162 @@ async function sendMsg() {
     document.getElementById('msgIn').value = "";
     playSound('msgSend');
 }
+
+
+
+
+// --- CRITICAL FIX: DISPLAY TEXT NOT ID ---
+
+function listen() {
+    const room = getRoom();
+    db.ref('chats/' + room + '/msgs').on('value', snap => {
+        const flow = document.getElementById('msg-flow');
+        flow.innerHTML = ""; // Clear flow to redraw
+        
+        snap.forEach(child => {
+            const data = child.val();
+            const isMe = data.sender === myUid;
+            
+            try {
+                // Use the shared SALT and userPass to decrypt
+                const decryptKey = CryptoJS.SHA256(userPass + SALT).toString();
+                const bytes = CryptoJS.AES.decrypt(data.content, decryptKey);
+                const decryptedText = bytes.toString(CryptoJS.enc.Utf8);
+
+                // If decryption fails, text will be empty
+                const displayMsg = decryptedText || "[Encrypted Message]";
+
+                flow.innerHTML += `
+                    <div class="msg ${isMe ? 'me' : 'other'}" onclick="${isMe ? `deleteMyMsg('${child.key}')` : ''}">
+                        <span class="sender-tag">${data.sender}</span>
+                        ${displayMsg}
+                        ${isMe ? '<span class="receipt"><i class="fas fa-check-double"></i></span>' : ''}
+                    </div>
+                `;
+            } catch (e) {
+                flow.innerHTML += `<div class="msg other"><small>[Decryption Error]</small></div>`;
+            }
+        });
+        flow.scrollTop = flow.scrollHeight; // Auto-scroll to bottom
+    });
+}
+
+// --- FIXED SEND FUNCTION ---
+async function sendMsg() {
+    const textInput = document.getElementById('msgIn');
+    const text = textInput.value.trim();
+    
+    if(!text || !partnerUid) return;
+    if(!checkContentSafety(text)) return;
+
+    // Encrypt the message before sending
+    const encryptKey = CryptoJS.SHA256(userPass + SALT).toString();
+    const crypted = CryptoJS.AES.encrypt(text, encryptKey).toString();
+    
+    const room = getRoom();
+    
+    // Push to the chat room
+    await db.ref('chats/' + room + '/msgs').push({
+        sender: myUid,
+        content: crypted,
+        timestamp: Date.now()
+    });
+
+    // Also notify the Request system if they haven't added you
+    const targetKey = partnerUid.replace(/-/g, "");
+    db.ref('requests/' + targetKey + '/' + myUid.replace(/-/g,"")).set({
+        text: "New Message",
+        timestamp: Date.now()
+    });
+
+    textInput.value = ""; // Clear input
+    playSound('msgSend');
+}
+
+
+// --- FINAL PERFORMANCE & READABILITY FIX ---
+
+// 1. Shared Encryption Key (Uses Room ID so both can decrypt)
+function getSecureKey() {
+    return CryptoJS.SHA256(getRoom() + SALT).toString();
+}
+
+// 2. Fixed Listen Function (Shows Text, Not ID)
+function listen() {
+    const room = getRoom();
+    db.ref('chats/' + room + '/msgs').limitToLast(50).on('value', snap => {
+        const flow = document.getElementById('msg-flow');
+        if (!flow) return;
+        flow.innerHTML = ""; 
+        
+        const key = getSecureKey();
+
+        snap.forEach(child => {
+            const d = child.val();
+            const isMe = d.sender === myUid;
+            
+            try {
+                // Decrypt using the SHARED Room Key
+                const bytes = CryptoJS.AES.decrypt(d.content, key);
+                const decryptedText = bytes.toString(CryptoJS.enc.Utf8);
+
+                // Fallback if decryption fails
+                const messageToShow = decryptedText ? decryptedText : "[Cipher Locked]";
+
+                flow.innerHTML += `
+                    <div class="msg ${isMe ? 'me' : 'other'}" onclick="${isMe ? `deleteMyMsg('${child.key}')` : ''}">
+                        <span class="sender-tag">${d.sender}</span>
+                        ${messageToShow}
+                    </div>
+                `;
+            } catch (e) {
+                flow.innerHTML += `<div class="msg other"><small style="opacity:0.5">[Encrypted Payload]</small></div>`;
+            }
+        });
+        flow.scrollTop = flow.scrollHeight;
+    });
+}
+
+// 3. Optimized Send Function (Instant Delivery)
+async function sendMsg() {
+    const input = document.getElementById('msgIn');
+    const text = input.value.trim();
+    
+    if(!text || !partnerUid) return;
+    if(!checkContentSafety(text)) return;
+
+    // Encrypt using the SHARED Room Key
+    const crypted = CryptoJS.AES.encrypt(text, getSecureKey()).toString();
+    
+    const room = getRoom();
+    
+    // Send message to Firebase
+    db.ref('chats/' + room + '/msgs').push({
+        sender: myUid,
+        content: crypted,
+        timestamp: Date.now()
+    });
+
+    // Notify recipient (Ignore/Request System)
+    const targetKey = partnerUid.replace(/-/g, "");
+    db.ref('requests/' + targetKey + '/' + myUid.replace(/-/g,"")).set({
+        text: "New Message",
+        timestamp: Date.now()
+    });
+
+    input.value = ""; 
+    playSound('msgSend');
+}
+
+// 4. Fixed Room Generation (Ensures both users enter the SAME room)
+function getRoom() {
+    if (!myUid || !partnerUid) return "lobby";
+    if (chatType === 'group') return "group_" + partnerUid;
+    
+    // Alphabetical sort ensures User A and User B always share the same ID
+    const ids = [myUid.replace(/-/g,""), partnerUid.replace(/-/g,"")].sort();
+    return "private_" + ids[0] + "_" + ids[1];
+}
 </script>
 </body>
 </html>
