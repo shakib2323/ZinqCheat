@@ -468,6 +468,7 @@ input:checked + .slider:before { transform: translateX(20px); }
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
+    checkSavedSession(); 
     const firebaseConfig = { apiKey: "AIzaSyDMMu8Zqa1lG9uJ1m96KCWFx1uwJuZ3Dn4", databaseURL: "https://zinqcheat-default-rtdb.firebaseio.com/", projectId: "zinqcheat" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
@@ -2290,3 +2291,4 @@ window.addEventListener('pageshow', function(event) {
 </script>
 </body>
 </html>
+
