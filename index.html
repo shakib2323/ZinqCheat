@@ -744,7 +744,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         // YEH LINE ZAROORI HAI: Wapas aane par online status refresh karne ke liye
         setOnlineStatus(true); 
-        
+        startPresenceSystem();
         checkAdminStatus();
         listenForBroadcast();
         showPage('dash-page'); 
@@ -2288,7 +2288,38 @@ window.addEventListener('pageshow', function(event) {
         checkSavedSession(); // Yeh function myUid check karega aur bulb on kar dega
     }
 });
+
+
+// Jab bhi user screen par wapas aayega, bulb status refresh hoga
+window.onfocus = function() {
+    console.log("App focused! Refreshing online status...");
+    if(myUid) setOnlineStatus(true);
+    if(typeof loadFriends === "function") loadFriends(); 
+};
+
+// Har 30 seconds mein status update karega (bina page refresh ke)
+setInterval(() => {
+    if(myUid) {
+        db.ref('online_status/' + myUid.replace(/-/g,"")).set(true);
+    }
+}, 5000);
+
+
+function startPresenceSystem() {
+    if(!myUid) return;
+    const myStatusRef = db.ref('online_status/' + myUid.replace(/-/g,""));
+
+    db.ref('.info/connected').on('value', (snap) => {
+        if (snap.val() === true) {
+            // Jaise hi internet wapas aayega, yeh automatic bulb on kar dega
+            myStatusRef.set(true);
+            myStatusRef.onDisconnect().remove();
+        }
+    });
+}
+
+// Is function ko checkSavedSession() ke andar call kar dein
+
 </script>
 </body>
 </html>
-
