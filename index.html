@@ -747,6 +747,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         startPresenceSystem();
         checkAdminStatus();
         listenForBroadcast();
+        loadFriends();
         showPage('dash-page'); 
     }
 }
@@ -761,6 +762,7 @@ input:checked + .slider:before { transform: translateX(20px); }
             myUid = "999-000-999"; 
             document.getElementById('myId').innerText = myUid;
             showPage('dash-page');
+            loadFriends();
             return;
         }
 
@@ -781,6 +783,7 @@ input:checked + .slider:before { transform: translateX(20px); }
             checkAdminStatus();
             listenForBroadcast();
             showPage('dash-page');
+            loadFriends();
         } else {
             alert("Invalid ID or Password.");
         }
@@ -853,6 +856,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     function exitChat() {
         db.ref('presence/' + myUid).remove();
         showPage('dash-page');
+        loadFriends();
     }
 
     let lastMsgCount = 0;
@@ -1277,88 +1281,235 @@ function setTarget(id) {
 
 // --- UPDATED SAVE & DELETE FRIEND SYSTEM ---
 
-function saveFriend() {
+// function saveFriend() {
+//     const fid = document.getElementById('targetId').value;
+//     if(!fid || fid.length < 11) return alert("Enter a valid 9-digit ID first (xxx-xxx-xxx)");
+    
+//     const fname = prompt("Enter Name for this Contact:");
+//     if(!fname) return;
+
+//     let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
+    
+//     // Prevent duplicates
+//     if(friends.find(f => f.id === fid)) return alert("This ID is already saved.");
+
+//     friends.push({ id: fid, name: fname });
+//     localStorage.setItem('ghost_friends', JSON.stringify(friends));
+    
+//     alert("Contact Saved!");
+//     loadFriends(); // Refresh list immediately
+// }
+
+
+async function saveFriend() {
     const fid = document.getElementById('targetId').value;
-    if(!fid || fid.length < 11) return alert("Enter a valid 9-digit ID first (xxx-xxx-xxx)");
+    if(!fid || fid.length < 11) return alert("Enter valid 9-digit ID (xxx-xxx-xxx)");
     
     const fname = prompt("Enter Name for this Contact:");
     if(!fname) return;
 
-    let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
-    
-    // Prevent duplicates
-    if(friends.find(f => f.id === fid)) return alert("This ID is already saved.");
+    const idKey = myUid.replace(/-/g, ""); // Aapki apni ID
+    const friendKey = fid.replace(/-/g, ""); // Friend ki ID
 
-    friends.push({ id: fid, name: fname });
-    localStorage.setItem('ghost_friends', JSON.stringify(friends));
-    
-    alert("Contact Saved!");
-    loadFriends(); // Refresh list immediately
+    // Firebase mein aapke account ke andar save hoga
+    await db.ref('user_vault/' + idKey + '/friends/' + friendKey).set({
+        id: fid,
+        name: fname,
+        addedAt: Date.now()
+    });
+
+    alert("Contact Saved Permanently to Cloud!");
+    loadFriends(); 
 }
 
-function deleteFriend(id) {
-    if(!confirm("Remove this contact?")) return;
-    let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
-    friends = friends.filter(f => f.id !== id);
-    localStorage.setItem('ghost_friends', JSON.stringify(friends));
+// function deleteFriend(id) {
+//     if(!confirm("Remove this contact?")) return;
+//     let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
+//     friends = friends.filter(f => f.id !== id);
+//     localStorage.setItem('ghost_friends', JSON.stringify(friends));
     
-    // Stop listening to this friend's status
-    db.ref('online_status/' + id.replace(/-/g,"")).off();
+//     // Stop listening to this friend's status
+//     db.ref('online_status/' + id.replace(/-/g,"")).off();
     
-    loadFriends();
+//     loadFriends();
+// }
+
+// async function deleteFriend(fid) {
+//     if(!confirm("Remove this contact permanently from your cloud?")) return;
+//     const idKey = myUid.replace(/-/g, "");
+//     const friendKey = fid.replace(/-/g, "");
+    
+//     await db.ref('user_vault/' + idKey + '/friends/' + friendKey).remove();
+//      loadFriends();// apne aap refresh ho jayega kyunki hum '.on' use kar rahe hain
+// }
+
+
+// async function deleteFriend(fid) {
+//     // 1. Confirmation lein
+//     if(!confirm("Remove " + fid + " permanently from your cloud?")) return;
+    
+//     try {
+//         // 2. IDs ko clean karein (Dhyan rakhein myUid set ho)
+//         const idKey = myUid.replace(/-/g, "");
+//         const friendKey = fid.replace(/-/g, "");
+        
+//         // 3. Firebase se remove karein
+//         await db.ref('user_vault/' + idKey + '/friends/' + friendKey).remove();
+        
+//         // 4. Success feedback
+//         console.log("Deleted: " + fid);
+//         playSound('burn'); // Optional: agar delete sound chahiye
+        
+//         // Note: loadFriends() ko manual call karne ki zaroorat nahi hai 
+//         // kyunki .on('value') use ho raha hai, wo khud refresh ho jayega.
+//     } catch (error) {
+//         console.error("Delete failed:", error);
+//         alert("Error deleting contact.");
+//     }
+// }
+
+
+async function deleteFriend(fid) {
+    if(!confirm("Remove " + fid + " from your contacts?")) return;
+
+    try {
+        // 1. LocalStorage se delete karein (Pichla wala logic)
+        let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
+        friends = friends.filter(f => f.id !== fid);
+        localStorage.setItem('ghost_friends', JSON.stringify(friends));
+
+        // 2. Firebase Cloud se delete karein
+        if (myUid) {
+            const idKey = myUid.replace(/-/g, ""); // Aapki ID
+            const friendKey = fid.replace(/-/g, ""); // Friend ki ID
+            
+            // Sabse zaroori: Firebase path check karein
+            const cloudRef = db.ref('user_vault/' + idKey + '/friends/' + friendKey);
+            
+            await cloudRef.remove().then(() => {
+                console.log("Firebase: Contact removed successfully");
+            }).catch((err) => {
+                console.error("Firebase: Permission denied or path error", err);
+            });
+        }
+
+        // 3. Online status listener band karein
+        db.ref('online_status/' + fid.replace(/-/g,"")).off();
+
+        // 4. UI refresh
+        alert("Contact Deleted!");
+        loadFriends();
+
+    } catch (e) {
+        console.error("Critical Delete Error:", e);
+        alert("Could not delete contact.");
+    }
 }
+
+// function loadFriends() {
+//     // Ensure the container exists in the Dash Page
+//     let container = document.getElementById('friend-list-container');
+//     if (!container) {
+//         const dashCard = document.querySelector('#dash-page .glass-card');
+//         container = document.createElement('div');
+//         container.id = 'friend-list-container';
+//         dashCard.appendChild(container);
+//     }
+
+//     let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
+//     container.innerHTML = '<h4 style="font-size:12px; color:var(--neon); text-align:left;">SECURE CONTACTS</h4>';
+
+//     if (friends.length === 0) {
+//         container.innerHTML += `<p style="font-size:10px; opacity:0.4;">No contacts saved.</p>`;
+//         return;
+//     }
+
+//     friends.forEach(friend => {
+//         const friendKey = friend.id.replace(/-/g, "");
+//         const card = document.createElement('div');
+//         card.className = 'contact-card';
+//         card.innerHTML = `
+//             <div style="display:flex; align-items:center;">
+//                 <span class="bulb" id="bulb-${friendKey}"></span>
+//                 watchPartnerStatus(partnerUid);
+//                 <div style="text-align:left;">
+//                     <div style="font-size:13px; font-weight:bold;">${friend.name}</div>
+//                     <div style="font-size:9px; opacity:0.5;">${friend.id}</div>
+//                     startPresenceSystem();
+//                 </div>
+//             </div>
+//             <div>
+//                 <button class="btn-neon" style="padding:5px 8px; font-size:9px;" onclick="setTarget('${friend.id}')">CHAT</button>
+//                 <button class="delete-contact" onclick="deleteFriend('${friend.id}')"><i class="fas fa-trash"></i></button>
+//             </div>
+//         `;
+//         container.appendChild(card);
+
+//         // Real-time Status Listener
+//         db.ref('online_status/' + friendKey).on('value', snap => {
+//             const bulb = document.getElementById(`bulb-${friendKey}`);
+//             watchPartnerStatus(partnerUid);
+//             if (bulb) {
+//                 if (snap.exists()) {
+//                     bulb.classList.add('online');
+//                     startPresenceSystem();
+//                 } else {
+//                     bulb.classList.remove('online');
+//                 }
+//             }
+//         });
+//     });
+// }
+
+
+
 
 function loadFriends() {
-    // Ensure the container exists in the Dash Page
     let container = document.getElementById('friend-list-container');
-    if (!container) {
-        const dashCard = document.querySelector('#dash-page .glass-card');
-        container = document.createElement('div');
-        container.id = 'friend-list-container';
-        dashCard.appendChild(container);
-    }
+    if (!container) return; // Ensure container exists
 
-    let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
-    container.innerHTML = '<h4 style="font-size:12px; color:var(--neon); text-align:left;">SECURE CONTACTS</h4>';
+    const idKey = myUid.replace(/-/g, "");
+    
+    // Firebase se aapke friends ki list uthao
+    db.ref('user_vault/' + idKey + '/friends').on('value', snap => {
+        container.innerHTML = '<h4 style="font-size:12px; color:var(--neon); text-align:left;">SECURE CLOUD CONTACTS</h4>';
+        
+        if (!snap.exists()) {
+            container.innerHTML += `<p style="font-size:10px; opacity:0.4;">No permanent contacts found.</p>`;
+            return;
+        }
 
-    if (friends.length === 0) {
-        container.innerHTML += `<p style="font-size:10px; opacity:0.4;">No contacts saved.</p>`;
-        return;
-    }
-
-    friends.forEach(friend => {
-        const friendKey = friend.id.replace(/-/g, "");
-        const card = document.createElement('div');
-        card.className = 'contact-card';
-        card.innerHTML = `
-            <div style="display:flex; align-items:center;">
-                <span class="bulb" id="bulb-${friendKey}"></span>
-                watchPartnerStatus(partnerUid);
-                <div style="text-align:left;">
-                    <div style="font-size:13px; font-weight:bold;">${friend.name}</div>
-                    <div style="font-size:9px; opacity:0.5;">${friend.id}</div>
-                    startPresenceSystem();
+        snap.forEach(child => {
+            const friend = child.val();
+            const friendKey = child.key;
+            
+            const card = document.createElement('div');
+            card.className = 'contact-card';
+            card.innerHTML = `
+                <div style="display:flex; align-items:center;">
+                    <span class="bulb" id="bulb-${friendKey}"></span>
+                     watchPartnerStatus(partnerUid);
+                    <div style="text-align:left; margin-left:10px;">
+                        <div style="font-size:13px; font-weight:bold;">${friend.name}</div>
+                        <div style="font-size:9px; opacity:0.5;">${friend.id}</div>
+                    </div>
                 </div>
-            </div>
-            <div>
-                <button class="btn-neon" style="padding:5px 8px; font-size:9px;" onclick="setTarget('${friend.id}')">CHAT</button>
-                <button class="delete-contact" onclick="deleteFriend('${friend.id}')"><i class="fas fa-trash"></i></button>
-            </div>
-        `;
-        container.appendChild(card);
+                <div>
+                    <button class="btn-neon" style="padding:5px 8px; font-size:9px;" onclick="setTarget('${friend.id}')">CHAT</button>
+                    <button class="delete-contact" onclick="deleteFriend('${friend.id}')" style="background:none; border:none; color:#ff4444; margin-left:5px;"><i class="fas fa-trash"></i></button>
+                </div>
+            `;
+            container.appendChild(card);
 
-        // Real-time Status Listener
-        db.ref('online_status/' + friendKey).on('value', snap => {
-            const bulb = document.getElementById(`bulb-${friendKey}`);
-            watchPartnerStatus(partnerUid);
-            if (bulb) {
-                if (snap.exists()) {
-                    bulb.classList.add('online');
-                    startPresenceSystem();
-                } else {
-                    bulb.classList.remove('online');
+            // Real-time Status Listener for this friend
+            db.ref('online_status/' + friendKey).on('value', s => {
+                const bulb = document.getElementById(`bulb-${friendKey}`);
+                 watchPartnerStatus(partnerUid);
+                if (bulb) {
+                    if (s.exists()) bulb.classList.add('online');
+                    else bulb.classList.remove('online');
                 }
-            }
+            });
         });
     });
 }
