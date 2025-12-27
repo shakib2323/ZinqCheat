@@ -857,46 +857,99 @@ input:checked + .slider:before { transform: translateX(20px); }
 
     let lastMsgCount = 0;
     // --- MANDATORY: E2EE DECRYPTION ---
-    function listen() {
-        db.ref('chats/' + getRoom() + '/msgs').on('value', snap => {
-            const flow = document.getElementById('msg-flow'); flow.innerHTML = "";
-            let newCount = 0;
-            snap.forEach(c => {
-                newCount++;
-                const d = c.val();
-                try {
-                    // Use user's password hash as the local key for decryption
-                    const decryptKey = CryptoJS.SHA256(userPass + SALT).toString();
-                    const text = CryptoJS.AES.decrypt(d.content, decryptKey).toString(CryptoJS.enc.Utf8);
+    // function listen() {
+    //     db.ref('chats/' + getRoom() + '/msgs').on('value', snap => {
+    //         const flow = document.getElementById('msg-flow'); flow.innerHTML = "";
+    //         let newCount = 0;
+    //         snap.forEach(c => {
+    //             newCount++;
+    //             const d = c.val();
+    //             try {
+    //                 // Use user's password hash as the local key for decryption
+    //                 const decryptKey = CryptoJS.SHA256(userPass + SALT).toString();
+    //                 const text = CryptoJS.AES.decrypt(d.content, decryptKey).toString(CryptoJS.enc.Utf8);
                     
-                    if(text === KILL_CODE && d.sender !== myUid) { logout(); return; }
-                    const isMe = d.sender === myUid;
-                    const readStatus = (d.wasRead || (isMe && partnerActive)) ? "read" : "";
-                    const receipt = isMe ? `<span class="receipt ${readStatus}"><i class="fas fa-check-double"></i></span>` : "";
+    //                 if(text === KILL_CODE && d.sender !== myUid) { logout(); return; }
+    //                 const isMe = d.sender === myUid;
+    //                 const readStatus = (d.wasRead || (isMe && partnerActive)) ? "read" : "";
+    //                 const receipt = isMe ? `<span class="receipt ${readStatus}"><i class="fas fa-check-double"></i></span>` : "";
                     
-                    // MANDATORY: CLICK TO DELETE OWN MESSAGE
-                    const deleteAction = isMe ? `onclick="deleteMyMsg('${c.key}')"` : "";
+    //                 // MANDATORY: CLICK TO DELETE OWN MESSAGE
+    //                 const deleteAction = isMe ? `onclick="deleteMyMsg('${c.key}')"` : "";
 
-                    if(d.viewOnce && !isMe) {
-                        flow.innerHTML += `<div class="msg other" onclick="viewAndDestroy('${c.key}')" style="cursor:pointer; font-style:italic;"><i class="fas fa-eye"></i> View Once Message</div>`;
-                    } else {
-                        flow.innerHTML += `<div class="msg ${isMe?'me':'other'}" ${deleteAction} title="${isMe?'Click to Delete':''}"><span class="sender-tag">${d.sender}</span>${text}${receipt}</div>`;
-                    }
-                } catch(e) {
-                    flow.innerHTML += `<div class="msg other"><small style="opacity:0.5">[Encrypted Payload]</small></div>`;
+    //                 if(d.viewOnce && !isMe) {
+    //                     flow.innerHTML += `<div class="msg other" onclick="viewAndDestroy('${c.key}')" style="cursor:pointer; font-style:italic;"><i class="fas fa-eye"></i> View Once Message</div>`;
+    //                 } else {
+    //                     flow.innerHTML += `<div class="msg ${isMe?'me':'other'}" ${deleteAction} title="${isMe?'Click to Delete':''}"><span class="sender-tag">${d.sender}</span>${text}${receipt}</div>`;
+    //                 }
+    //             } catch(e) {
+    //                 flow.innerHTML += `<div class="msg other"><small style="opacity:0.5">[Encrypted Payload]</small></div>`;
+    //             }
+    //         });
+    //         if(newCount > lastMsgCount) {
+    //             const msgs = snap.val();
+    //             if(msgs) {
+    //                 const lastMsg = Object.values(msgs).pop();
+    //                 if(lastMsg.sender !== myUid) playSound('msgRec');
+    //             }
+    //         }
+    //         lastMsgCount = newCount;
+    //         flow.scrollTop = flow.scrollHeight;
+    //     });
+    // }
+    function listen() {
+    const room = getRoom();
+    const chatRef = db.ref('chats/' + room + '/msgs');
+
+    // Purana listener hatao taaki multiple listeners na ban jayein
+    chatRef.off(); 
+
+    chatRef.on('value', snap => {
+        const flow = document.getElementById('msg-flow');
+        if (!flow) return;
+        
+        flow.innerHTML = "";
+        let newCount = 0;
+
+        // Decryption Key: Ensure Laptop and Phone have SAME userPass
+        const decryptKey = CryptoJS.SHA256(userPass + SALT).toString();
+
+        snap.forEach(c => {
+            newCount++;
+            const d = c.val();
+            try {
+                const bytes = CryptoJS.AES.decrypt(d.content, decryptKey);
+                const text = bytes.toString(CryptoJS.enc.Utf8);
+
+                // Agar text khali hai, iska matlab Laptop aur Phone ki key match nahi kar rahi
+                if(!text) throw new Error("Decryption failed - Key mismatch");
+
+                if(text === KILL_CODE && d.sender !== myUid) { logout(); return; }
+                
+                const isMe = d.sender === myUid;
+                const readStatus = (d.wasRead || (isMe && partnerActive)) ? "read" : "";
+                const receipt = isMe ? `<span class="receipt ${readStatus}"><i class="fas fa-check-double"></i></span>` : "";
+                const deleteAction = isMe ? `onclick="deleteMyMsg('${c.key}')"` : "";
+
+                if(d.viewOnce && !isMe) {
+                    flow.innerHTML += `<div class="msg other" onclick="viewAndDestroy('${c.key}')"><i class="fas fa-eye"></i> View Once Message</div>`;
+                } else {
+                    flow.innerHTML += `<div class="msg ${isMe?'me':'other'}" ${deleteAction}><span class="sender-tag">${d.sender}</span>${text}${receipt}</div>`;
                 }
-            });
-            if(newCount > lastMsgCount) {
-                const msgs = snap.val();
-                if(msgs) {
-                    const lastMsg = Object.values(msgs).pop();
-                    if(lastMsg.sender !== myUid) playSound('msgRec');
-                }
+            } catch(e) {
+                // Laptop se bheja msg yahan dikhega agar Phone ki key alag hai
+                flow.innerHTML += `<div class="msg other"><small style="color:red;">[Security Mismatch: Laptop/Phone keys differ]</small></div>`;
             }
-            lastMsgCount = newCount;
-            flow.scrollTop = flow.scrollHeight;
         });
-    }
+
+        if(newCount > lastMsgCount) {
+            const msgs = snap.val();
+            if(msgs && Object.values(msgs).pop().sender !== myUid) playSound('msgRec');
+        }
+        lastMsgCount = newCount;
+        flow.scrollTop = flow.scrollHeight;
+    });
+}
 
     // --- MANDATORY: SPECIFIC MESSAGE DELETION ---
     function deleteMyMsg(msgId) {
@@ -2319,6 +2372,22 @@ function startPresenceSystem() {
 }
 
 // Is function ko checkSavedSession() ke andar call kar dein
+
+
+
+
+
+// Phone tab ko hamesha "zinda" rakhne ke liye
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        // Re-connect Firebase
+        firebase.database().goOnline();
+        if(myUid && partnerUid) {
+            console.log("Syncing Laptop messages...");
+            listen(); 
+        }
+    }
+});
 
 </script>
 </body>
