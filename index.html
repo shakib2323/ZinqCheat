@@ -443,6 +443,7 @@ input:checked + .slider:before { transform: translateX(20px); }
             <div class="chat-header">
     <!-- <button onclick="showPage('dash-page')"><i class="fas fa-arrow-left"></i></button> -->
     <div style="display: flex; align-items: center; gap: 8px;">
+        
         <span id="chat-title"></span>
         <span id="live-chat-bulb" class="bulb" style="width: 8px; height: 8px;"></span>
     </div>
@@ -714,21 +715,40 @@ input:checked + .slider:before { transform: translateX(20px); }
         document.getElementById(id).classList.add('active');
     }
 
-    async function checkSavedSession() {
-        const id = localStorage.getItem('ghost_id');
-        const pass = localStorage.getItem('ghost_pass');
-        const email = localStorage.getItem('ghost_email');
-        if(id && pass) {
-            if (await checkBanStatus(id)) return;
-            myUid = id; userPass = pass; userEmail = email;
-            document.getElementById('myId').innerText = id; 
-            setOnlineStatus(true);
-            checkAdminStatus();
-            listenForBroadcast();
-            showPage('dash-page'); 
-        }
-    }
+    // async function checkSavedSession() {
+    //     const id = localStorage.getItem('ghost_id');
+    //     const pass = localStorage.getItem('ghost_pass');
+    //     const email = localStorage.getItem('ghost_email');
+    //     if(id && pass) {
+    //         if (await checkBanStatus(id)) return;
+    //         myUid = id; userPass = pass; userEmail = email;
+    //         document.getElementById('myId').innerText = id; 
+    //         setOnlineStatus(true);
+    //         checkAdminStatus();
+    //         listenForBroadcast();
+    //         showPage('dash-page'); 
+    //     }
+    // }
 
+
+    async function checkSavedSession() {
+    const id = localStorage.getItem('ghost_id');
+    const pass = localStorage.getItem('ghost_pass');
+    const email = localStorage.getItem('ghost_email');
+    
+    if(id && pass) {
+        if (await checkBanStatus(id)) return;
+        myUid = id; userPass = pass; userEmail = email;
+        document.getElementById('myId').innerText = id; 
+        
+        // YEH LINE ZAROORI HAI: Wapas aane par online status refresh karne ke liye
+        setOnlineStatus(true); 
+        
+        checkAdminStatus();
+        listenForBroadcast();
+        showPage('dash-page'); 
+    }
+}
     // --- MANDATORY: DUAL-KEY LOGIN ---
     async function doAdvancedLogin() {
         const pin = document.getElementById('loginPin').value;
@@ -816,6 +836,9 @@ input:checked + .slider:before { transform: translateX(20px); }
     function openChatPage(title) {
         document.getElementById('chat-title').innerText = title;
         showPage('chat-page');
+        watchPartnerStatus(partnerUid);
+        updateChatPresence('online');
+        listenToPartnerPresence();
         listen();
     }
 
@@ -1051,7 +1074,7 @@ function decryptFinal(cipherText) {
     } catch(e) { return "[Decryption Error: Key Mismatch]"; }
 }
 
-// --- FEATURE 2: PANIC MODE (KILL SWITCH) ---
+//  PANIC MODE (KILL SWITCH) ---
 window.addEventListener('devicemotion', (event) => {
     let acceleration = event.accelerationIncludingGravity;
     let threshold = 30; 
@@ -1081,6 +1104,7 @@ function saveFriend() {
 
 function loadFriends() {
     const container = document.getElementById('friend-list-container') || createFriendContainer();
+     
     let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
     container.innerHTML = friends.map(f => `
         <div class="friend-item">
@@ -1130,7 +1154,7 @@ showPage = function(id) {
 function loadFriends() {
     const container = document.getElementById('friend-list-container') || createFriendContainer();
     let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
-    
+      watchPartnerStatus(partnerUid);
     if (friends.length === 0) {
         container.innerHTML = `<p style="font-size:11px; opacity:0.4; margin-top:10px;">No saved contacts yet.</p>`;
         return;
@@ -1902,11 +1926,13 @@ function loadFriends() {
         // Re-attach status listeners
         db.ref('online_status/' + friendKey).on('value', s => {
             const b = document.getElementById(`bulb-${friendKey}`);
+            
             if(b) s.exists() ? b.classList.add('online') : b.classList.remove('online');
         });
         
         db.ref('user_status/' + friendKey).on('value', s => {
             const st = document.getElementById(`status-val-${friendKey}`);
+             
             if(st) st.innerText = s.exists() ? s.val() : "No status";
         });
     });
@@ -1926,6 +1952,7 @@ function trackChatPresence() {
 
     // 1. Jab main chat page pe aaun, toh Firebase ko batao
     const presenceRef = db.ref(`chat_presence/${room}/${myKey}`);
+     watchPartnerStatus(partnerUid);
     presenceRef.set(true);
     presenceRef.onDisconnect().remove(); // App band hote hi status hata do
 
@@ -2051,19 +2078,7 @@ function listenToPartnerPresence() {
 
 
 
-// // Phone Back Button ya App Minimize detect karne ke liye
-// document.addEventListener("visibilitychange", () => {
-//     if (document.visibilityState === 'visible') {
-//         setPresence(); // Wapas aate hi Green
-//     } else {
-//         // Chale jane par Offline (Optional, onDisconnect handles this too)
-//         const myKey = myUid.replace(/[^a-zA-Z0-9]/g, "");
-//         db.ref('online_status/' + myKey).remove();
-//     }
-// });
 
-// // App khulne par status set karein
-// window.onload = setPresence;
 
 
 
@@ -2074,6 +2089,7 @@ function setMyPresence() {
     
     // Online aate hi Database update karo
     const ref = db.ref('online_status/' + myKey);
+     
     ref.set(true);
     ref.onDisconnect().remove(); // Net jane par offline
 }
@@ -2082,6 +2098,7 @@ function setMyPresence() {
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === 'visible') {
         setMyPresence(); // App khulte hi Green
+         
     } else {
         // App background me jate hi Offline
         if (myUid) {
@@ -2258,6 +2275,18 @@ function runSecurity() {
 activateMyPresence();
 runSecurity();
 
+
+
+
+
+// Is code ko script ke sabse niche add karein
+window.addEventListener('pageshow', function(event) {
+    // Agar page cache (back button) se load hua hai, toh session check dubara run karo
+    if (event.persisted || performance.getEntriesByType("navigation")[0].type === 'back_forward') {
+        console.log("Back button detected: Re-establishing presence...");
+        checkSavedSession(); // Yeh function myUid check karega aur bulb on kar dega
+    }
+});
 </script>
 </body>
 </html>
