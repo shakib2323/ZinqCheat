@@ -7,6 +7,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+
+<script>
+  // Service Worker Register karna
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+      .then(() => console.log("PWA Ready!"));
+  }
+</script>
+<script src="sw.js"></script>
+<script src="manifest.json"></script>
     <style>
 
 
@@ -298,9 +309,23 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 
 
+
+
+/* Blinking border effect */
+@keyframes neonPulse {
+    0% { border-color: var(--neon); box-shadow: 0 0 5px var(--neon); }
+    50% { border-color: #fff; box-shadow: 0 0 20px var(--neon), 0 0 10px #fff; }
+    100% { border-color: var(--neon); box-shadow: 0 0 5px var(--neon); }
+}
+
+.screen-active {
+    animation: neonPulse 1.5s infinite;
+    border: 2px solid var(--neon) !important;
+}
     </style>
 </head>
 <script src="script.js"></script>
+
 <body onload="checkSavedSession()">
 
 <div id="ban-overlay">
@@ -345,6 +370,8 @@ input:checked + .slider:before { transform: translateX(20px); }
     <div id="log-page" class="page">
         <div class="glass-card">
             <button class="back-btn" onclick="showPage('landing-page'); playSound('click')"><i class="fas fa-arrow-left"></i> BACK</button>
+
+            
             <h3 style="margin-top:20px;">Secure Login</h3>
             <input type="text" id="loginId" placeholder="ID (xxx-xxx-xxx)">
             <input type="password" id="loginPass" placeholder="Vault Password">
@@ -354,46 +381,75 @@ input:checked + .slider:before { transform: translateX(20px); }
     </div>
 
     <div id="dash-page" class="page">
-        <div class="glass-card" style="text-align:center;">
-            <div id="admin-msg-box"></div>
-            <div id="admin-access-btn" style="display:none">
-                <span class="admin-badge">ADMIN ACTIVE</span>
-                <button class="btn btn-neon" onclick="showPage('admin-panel'); playSound('click')" style="width:100%; margin-bottom:15px; background:var(--danger); color:white;">OPEN CONTROL PANEL</button>
+    <div class="glass-card" style="text-align:center; max-width: 400px; margin: auto;">
+        
+        <div id="admin-msg-box"></div>
+        <div id="admin-access-btn" style="display:none">
+            <span class="admin-badge">ADMIN ACTIVE</span>
+            <button class="btn btn-neon" onclick="showPage('admin-panel'); playSound('click')" style="width:100%; margin-bottom:15px; background:var(--danger); color:white; border-radius: 12px; font-weight: bold;">OPEN CONTROL PANEL</button>
+        </div>
+
+        <div id="mini-screen" style="width: 100%; height: 130px; background: #000; border: 1px solid rgba(0,255,255,0.3); border-radius: 18px; margin-bottom: 20px; overflow: hidden; position: relative; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(0,0,0,0.5);">
+            <div id="live-counter" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); padding: 4px 10px; border-radius: 30px; border: 1px solid var(--neon); font-size: 10px; color: var(--neon); z-index: 10; font-family: 'Courier New', monospace; letter-spacing: 1px;">
+                <span class="online-dot" style="width:7px; height:7px; background:var(--online); display:inline-block; border-radius:50%; margin-right:5px; box-shadow: 0 0 5px var(--online);"></span> 
+                <span id="active-user-count">0</span> ACTIVE
+            </div>
+            <div id="screen-content" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                <p style="font-size: 11px; opacity: 0.4; letter-spacing: 2px;">SECURE CONNECTION...</p>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <p id="vault-status" style="font-size:10px; color:var(--ghost); margin-bottom: 5px;"></p>
+            <p style="font-size:12px; opacity:0.6; margin:0;">YOUR IDENTITY <span id="my-online-status"></span></p>
+            <h2 id="myId" style="color:var(--neon); margin: 5px 0; font-family: 'Orbitron', sans-serif; letter-spacing: 2px;">---</h2>
+            <button class="btn btn-ghost" onclick="copyID(); playSound('click')" style="padding: 5px 15px; font-size: 11px; border-radius: 20px;">
+                <i class="fas fa-copy"></i> COPY ID
+            </button>
+        </div>
+
+        <hr style="border:0.5px solid rgba(255,255,255,0.1); margin:20px 0;">
+
+        <input type="text" id="targetId" placeholder="Enter Partner or Group ID" style="width: 100%; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; margin-bottom: 12px; text-align: center;">
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <button class="btn btn-neon" onclick="startGhost('private'); playSound('click')" style="padding: 12px; border-radius: 12px;">Private</button>
+            <button class="btn btn-neon" onclick="startGhost('group'); playSound('click')" style="background:var(--ghost); color:white; padding: 12px; border-radius: 12px;">Group</button>
+        </div>
+
+        <button class="btn btn-ghost" onclick="saveFriend()" style="width:100%; margin-top:15px; border-radius: 12px; border: 1px dashed rgba(255,255,255,0.3);">
+            <i class="fas fa-user-plus"></i> Save to Contacts
+        </button>
+        
+        <div id="friend-list-container" style="margin-top: 15px; max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 5px;">
+            <p style="font-size:10px; opacity:0.5; padding: 10px;">Loading contacts...</p>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.03); border-radius: 15px; padding: 12px; margin-top: 15px;">
+            <div class="settings-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="font-size: 12px; color: #ccc;"><i class="fas fa-bell"></i> Notifications</span>
+                <label class="switch">
+                    <input type="checkbox" id="notifyToggle" onchange="toggleNotify()" checked>
+                    <span class="slider"></span>
+                </label>
             </div>
             
-            <p id="vault-status" style="font-size:10px; color:var(--ghost)"></p>
-            <p style="font-size:12px; opacity:0.5;">YOUR IDENTITY <span id="my-online-status"></span></p>
-            <h2 id="myId" style="color:var(--neon);">---</h2>
-            <button class="btn btn-ghost" onclick="copyID(); playSound('click')"><i class="fas fa-copy"></i> COPY ID</button>
-            <hr style="border:0.5px solid #2d3748; margin:25px 0;">
-            <input type="text" id="targetId" placeholder="Partner or Group ID">
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
-                <button class="btn btn-neon" onclick="startGhost('private'); playSound('click')">Private</button>
-                <button class="btn btn-neon" onclick="startGhost('group'); playSound('click')" style="background:var(--ghost); color:white;">Group</button>
-           <!-- <button class="btn btn-ghost" onclick="saveFriend()" style="width:100%; margin-top:10px;">
-    <i class="fas fa-user-plus"></i> Save to Contacts
-</button> -->
-            </div>
- <button class="btn btn-ghost" onclick="saveFriend()" style="width:100%; margin-top:10px;">
-    <i class="fas fa-user-plus"></i> Save to Contacts
-</button>
-            <div class="settings-row">
-    <span style="font-size: 12px;"><i class="fas fa-bell"></i> Notifications</span>
-    <label class="switch">
-        <input type="checkbox" id="notifyToggle" onchange="toggleNotify()" checked>
-        <span class="slider"></span>
-    </label>
-</div>
-<button class="btn btn-ghost" onclick="setupAutoReply()" style="width:100%; margin-top:10px; font-size: 11px;">
-    <i class="fas fa-robot"></i> Configure Auto-Reply
-</button>
-            <button onclick="logout(); playSound('click')" style="margin-top:20px; background:none; border:none; color:grey;">Logout</button>
+            <button class="btn btn-ghost" onclick="setupAutoReply()" style="width:100%; font-size: 11px; padding: 8px; border-radius: 8px; background: rgba(0,255,255,0.05);">
+                <i class="fas fa-robot"></i> Configure Auto-Reply
+            </button>
         </div>
-    </div>
 
-    <div id="admin-panel" class="page">
+        <button onclick="logout(); playSound('click')" style="margin-top:25px; background:none; border:none; color:rgba(255,255,255,0.4); font-size: 12px; cursor: pointer;">
+            <i class="fas fa-sign-out-alt"></i> Logout Session
+        </button>
+    </div>
+</div>
+
+    <!-- <div id="admin-panel" class="page">
         <div class="glass-card" style="max-height: 90vh; overflow-y: auto;">
             <button class="back-btn" onclick="showPage('dash-page'); playSound('click')"><i class="fas fa-arrow-left"></i> BACK</button>
+            
+
             <h3 style="margin-top:25px; color:var(--danger)">Admin Control</h3>
             
             <div class="stat-card">
@@ -406,6 +462,23 @@ input:checked + .slider:before { transform: translateX(20px); }
                 <textarea id="broadcastMsg" placeholder="Type message for all users..."></textarea>
                 <button class="btn btn-neon" onclick="sendBroadcast(); playSound('click')" style="width:100%">Post Message</button>
             </div>
+            <div id="admin-panel" class="page">
+    <div class="glass-card">
+        <hr style="border:0.5px solid #2d3748;">
+        
+        <h4 style="color:var(--neon); font-size:14px;"><i class="fas fa-desktop"></i> LIVE SCREEN CONTROL</h4>
+        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px;">
+            <input type="text" id="screenInput" placeholder="URL or Text Content">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px;">
+                <button class="btn-neon" onclick="updateMiniScreen('video')">VIDEO</button>
+                <button class="btn-neon" onclick="updateMiniScreen('image')">IMAGE</button>
+                <button class="btn-neon" onclick="updateMiniScreen('text')">TEXT</button>
+            </div>
+            <button onclick="updateMiniScreen('clear')">CLEAR SCREEN</button>
+        </div>
+
+        </div>
+</div>
             <hr style="border:0.5px solid #2d3748;">
             <h4 style="font-size:14px; color:var(--neon)">User Directory (Email/ID)</h4>
             <div id="full-user-list" style="max-height:150px; overflow:auto; font-size:10px; margin-bottom:10px;"></div>
@@ -421,7 +494,65 @@ input:checked + .slider:before { transform: translateX(20px); }
                 <p style="font-size:12px; opacity:0.5;">No users in blacklist.</p>
             </div>
         </div>
+    </div> -->
+    
+
+
+    <div id="admin-panel" class="page">
+    <div class="glass-card" style="max-height: 90vh; overflow-y: auto;">
+        <button class="back-btn" onclick="showPage('dash-page'); playSound('click')">
+            <i class="fas fa-arrow-left"></i> BACK
+        </button>
+
+        <h3 style="margin-top:25px; color:var(--danger)">Admin Control</h3>
+        
+        <div class="stat-card">
+            <div><small>Online</small><br><b id="stat-online">0</b></div>
+            <div><small>Total Users</small><br><b id="stat-total">0</b></div>
+        </div>
+
+        <div style="background: rgba(0, 255, 255, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(0, 255, 255, 0.1); margin-bottom: 20px;">
+            <h4 style="color:var(--neon); font-size:14px; margin-top:0;"><i class="fas fa-desktop"></i> LIVE SCREEN CONTROL</h4>
+            <input type="text" id="screenInput" placeholder="URL or Text Content" style="width:100%; padding:10px; border-radius:8px; background:rgba(0,0,0,0.3); border:1px solid #333; color:white; margin-bottom:10px; font-size:12px;">
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px;">
+                <button class="btn-neon" onclick="updateMiniScreen('video')" style="font-size:10px; padding:8px;">VIDEO</button>
+                <button class="btn-neon" onclick="updateMiniScreen('image')" style="font-size:10px; padding:8px;">IMAGE</button>
+                <button class="btn-neon" onclick="updateMiniScreen('text')" style="font-size:10px; padding:8px;">TEXT</button>
+            </div>
+            <button onclick="updateMiniScreen('clear')" style="width:100%; margin-top:8px; background:none; border:1px solid #444; color:#888; font-size:10px; padding:5px; border-radius:5px;">CLEAR SCREEN</button>
+        </div>
+
+        <div style="margin-bottom:20px;">
+            <p style="font-size:12px;">Broadcast Message to All Users:</p>
+            <textarea id="broadcastMsg" placeholder="Type message for all users..." style="width:100%; min-height:60px; background:rgba(255,255,255,0.05); border:1px solid #333; color:white; border-radius:10px; padding:10px;"></textarea>
+            <button class="btn btn-neon" onclick="sendBroadcast(); playSound('click')" style="width:100%; margin-top:5px;">Post Message</button>
+        </div>
+
+        <hr style="border:0.5px solid #2d3748;">
+
+        <h4 style="font-size:14px; color:var(--neon)">User Directory (Email/ID)</h4>
+        <div id="full-user-list" style="max-height:150px; overflow:auto; font-size:10px; margin-bottom:10px;"></div>
+
+        <hr style="border:0.5px solid #2d3748;">
+
+        <h4 style="font-size:14px; color:var(--neon)">Reported Users</h4>
+        <div id="report-list">
+            <p style="font-size:12px; opacity:0.5;">Loading reports...</p>
+        </div>
+
+        <hr style="border:0.5px solid #2d3748; margin: 20px 0;">
+
+        <h4 style="font-size:14px; color:var(--ghost)"><i class="fas fa-user-lock"></i> Currently Banned Users</h4>
+        <div id="banned-list-admin">
+            <p style="font-size:12px; opacity:0.5;">No users in blacklist.</p>
+        </div>
     </div>
+</div>
+
+
+
+
 
     <div id="report-page" class="page">
         <div class="glass-card">
@@ -446,6 +577,7 @@ input:checked + .slider:before { transform: translateX(20px); }
         
         <span id="chat-title"></span>
         <span id="live-chat-bulb" class="bulb" style="width: 8px; height: 8px;"></span>
+        <span id="status-bulb" class="bulb"></span>
     </div>
 </div>
 
@@ -468,12 +600,21 @@ input:checked + .slider:before { transform: translateX(20px); }
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
-    checkSavedSession(); 
-    const firebaseConfig = { apiKey: "AIzaSyDMMu8Zqa1lG9uJ1m96KCWFx1uwJuZ3Dn4", databaseURL: "https://zinqcheat-default-rtdb.firebaseio.com/", projectId: "zinqcheat" };
+
+
+
+
+
+
+
+    const firebaseConfig = { 
+        apiKey: "AIzaSyDMMu8Zqa1lG9uJ1m96KCWFx1uwJuZ3Dn4", databaseURL: "https://zinqcheat-default-rtdb.firebaseio.com/", projectId: "zinqcheat" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     emailjs.init("aDv7N0Ry8Yq1VsNlw");
-
+    
+    
+ checkSavedSession(); 
     const sounds = {
         click: new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'),
         msgSend: new Audio('https://assets.mixkit.co/active_storage/sfx/2357/2357-preview.mp3'),
@@ -493,7 +634,8 @@ input:checked + .slider:before { transform: translateX(20px); }
     const KILL_CODE = "#WIPE_DEVICE";
     const FAKE_PIN = "0000"; 
     const ADMIN_EMAIL = "shakibscrd@gmail.com";
-    const BANNED_LIST = ["bomb", "kill", "drug", "hack", "scam", "weapon", "terror", "abuse", "suicide", "murder", "harm", "illegal"];
+    const BANNED_LIST = ["bomb", "kill", "drug", "hack", "scam", "weapon", "terror", "abuse", "suicide", "murder", "harm", "illegal","j2"];
+    
 
     // --- MANDATORY: ONLINE TRACKER ---
     function setOnlineStatus(status) {
@@ -620,7 +762,348 @@ input:checked + .slider:before { transform: translateX(20px); }
         document.getElementById('repTargetId').value = partnerUid;
         showPage('report-page');
     }
+// Admin update logic
+// function updateMiniScreen(mode) {
+//     const val = document.getElementById('screenInput').value.trim();
+//     if(mode !== 'clear' && !val) return alert("Please enter URL or Text first!");
 
+//     let data = {};
+//     if(mode === 'video') data = { type: 'video', url: val };
+//     else if(mode === 'image') data = { type: 'image', url: val };
+//     else if(mode === 'text') data = { type: 'text', content: val };
+//     else data = null; // Clear screen
+
+//     db.ref('admin_screen').set(data)
+//     .then(() => alert("Screen Updated for all users!"))
+//     .catch(e => alert("Error: " + e.message));
+// }/
+
+
+// --- 1. ADMIN UPDATE FUNCTION ---
+function updateMiniScreen(mode) {
+    const val = document.getElementById('screenInput').value.trim();
+    if(mode !== 'clear' && !val) return alert("Pehle URL ya Text likho!");
+
+    let data = null;
+    if(mode === 'video') data = { type: 'video', url: val };
+    else if(mode === 'image') data = { type: 'image', url: val };
+    else if(mode === 'text') data = { type: 'text', content: val };
+
+    // Database mein update
+    db.ref('admin_screen').set(data)
+    .then(() => {
+        alert("Screen Updated Successfully!");
+        document.getElementById('screenInput').value = ""; // Clear input after send
+    })
+    .catch(e => alert("Firebase Error: " + e.message));
+}
+
+// --- 2. THE CORRECT SYNC LOGIC (Merged with Broadcast Style) ---
+function initScreenSync() {
+    const container = document.getElementById('screen-content');
+    if(!container) return;
+
+    db.ref('admin_screen').on('value', (snapshot) => {
+        const data = snapshot.val();
+        
+        // Agar data null hai (Clear screen)
+        if (!data) {
+            container.innerHTML = `<p style="font-size:10px; opacity:0.3; margin-top:45px; letter-spacing:2px;">SECURE SYSTEM</p>`;
+            return;
+        }
+
+        // Logic to show Content
+        if (data.type === 'text') {
+            container.innerHTML = `<div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--neon); font-weight:bold; padding:15px; text-align:center; font-size:14px; text-transform:uppercase; animation: pulse 1.5s infinite;">${data.content}</div>`;
+        } 
+        else if (data.type === 'image') {
+            container.innerHTML = `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='https://via.placeholder.com/400x150?text=Invalid+Image+Link'">`;
+        } 
+        else if (data.type === 'video') {
+            container.innerHTML = `
+                <video autoplay muted loop playsinline style="width:100%; height:100%; object-fit:cover;">
+                    <source src="${data.url}" type="video/mp4">
+                </video>`;
+        }
+    });
+}
+
+// --- 3. AUTO-START ON LOAD ---
+// Jaise hi page load ho, ye functions chalne chahiye
+window.addEventListener('load', () => {
+    initScreenSync();
+    // Agar active user count wala function hai to use bhi yahan call karein
+    if(typeof startLiveUserCounter === 'function') startLiveUserCounter();
+});
+
+// User side sync logic (Isse checkSavedSession ke andar call karein)
+// function syncMiniScreen() {
+//     const screenBox = document.getElementById('mini-screen');
+//     const container = document.getElementById('screen-content');
+    
+//     db.ref('admin_screen').on('value', (snap) => {
+//         const data = snap.val();
+//         if (!container || !screenBox) return;
+
+//         if (data) {
+//             screenBox.classList.add('screen-active');
+//             // Dashboard par hone par hi sound bajega
+//             if(document.getElementById('dash-page').classList.contains('active')) {
+//                 try { playSound('alert'); } catch(e){}
+//             }
+//         } else {
+//             screenBox.classList.remove('screen-active');
+//             container.innerHTML = `<p style="font-size:10px; opacity:0.3; text-align:center; padding-top:45px;">SYSTEM SECURE</p>`;
+//             return;
+//         }
+
+//         // --- Render Logic ---
+//         if (data.type === 'video') {
+//             // playsinline aur muted video chalane ke liye mandatory hain
+//             container.innerHTML = `
+//                 <video id="adminVideo" autoplay muted loop playsinline preload="auto" 
+//                     style="width:100%; height:100%; object-fit:cover; background:#000;">
+//                     <source src="${data.url}" type="video/mp4">
+//                     Your browser does not support the video tag.
+//                 </video>`;
+            
+//             // Force play if browser blocks it
+//             const v = document.getElementById('adminVideo');
+//             if(v) v.play().catch(error => console.log("Auto-play blocked, waiting for interaction"));
+
+//         } else if (data.type === 'image') {
+//             container.innerHTML = `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
+//         } else if (data.type === 'text') {
+//             container.innerHTML = `<div style="padding:15px; font-size:13px; color:var(--neon); font-weight:bold; text-align:center; display:flex; align-items:center; justify-content:center; height:100%; text-transform: uppercase;">${data.content}</div>`;
+//         }
+//     });
+// }
+
+// function syncMiniScreen() {
+//     console.log("Sync System Started..."); // Debug line
+//     const container = document.getElementById('screen-content');
+//     const screenBox = document.getElementById('mini-screen');
+
+//     if (!container) {
+//         console.error("Error: 'screen-content' div nahi mila!");
+//         return;
+//     }
+
+//     // Firebase database connection
+//     db.ref('admin_screen').on('value', (snap) => {
+//         const data = snap.val();
+//         console.log("Firebase Data Received:", data); // Isse pata chalega data aa raha hai ya nahi
+
+//         if (!data) {
+//             container.innerHTML = `<p style="font-size:10px; opacity:0.3; text-align:center; padding-top:45px;">SYSTEM SECURE</p>`;
+//             if(screenBox) screenBox.classList.remove('screen-active');
+//             return;
+//         }
+
+//         if(screenBox) screenBox.classList.add('screen-active');
+
+//         // Logic to show Content
+//         if (data.type === 'video') {
+//             container.innerHTML = `
+//                 <video autoplay muted loop playsinline style="width:100%; height:100%; object-fit:cover;">
+//                     <source src="${data.url}" type="video/mp4">
+//                 </video>`;
+//         } else if (data.type === 'image') {
+//             container.innerHTML = `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='https://via.placeholder.com/400x150?text=Invalid+Image+URL'">`;
+//         } else if (data.type === 'text') {
+//             container.innerHTML = `<div style="padding:15px; font-size:14px; color:var(--neon); font-weight:bold; text-align:center; display:flex; align-items:center; justify-content:center; height:100%;">${data.content}</div>`;
+//         }
+//     }, (error) => {
+//         console.error("Firebase Read Error:", error);
+//     });
+// }
+
+
+// // Screen Sync Function (Broadcast logic ki tarah)
+// function syncMiniScreen() {
+//     const container = document.getElementById('screen-content');
+//     if (!container) return;
+
+    // Jaise broadcast "on('value')" use karta hai, ye bhi wahi karega
+    // db.ref('admin_screen').on('value', (snapshot) => {
+    //     const data = snapshot.val();
+        
+    //     if (!data) {
+    //         container.innerHTML = `<p style="font-size:10px; opacity:0.3; margin-top:45px;">SYSTEM SECURE</p>`;
+    //         return;
+    //     }
+
+    //     // Render based on type
+    //     if (data.type === 'video') {
+    //         container.innerHTML = `
+    //             <video autoplay muted loop playsinline style="width:100%; height:100%; object-fit:cover;">
+    //                 <source src="${data.url}" type="video/mp4">
+    //             </video>`;
+    //     } else if (data.type === 'image') {
+    //         container.innerHTML = `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
+    // db.ref('admin_screen').on('value', (snap) => {
+    // const data = snap.val();
+    // const container = document.getElementById('screen-content');
+    // if(!container || !data) return;
+
+    // if (data.type === 'video') {
+    //     // --- Aapka naya code yahan se shuru hota hai ---
+    //     container.innerHTML = `
+    //         <video id="activeVideo" autoplay muted loop playsinline style="width:100%; height:100%; object-fit:cover; background:#000;">
+    //             <source src="${data.url}" type="video/mp4">
+    //             Your browser does not support the video tag.
+    //         </video>`;
+        
+    //     const v = document.getElementById('activeVideo');
+    //     if (v) {
+    //         v.load(); 
+    //         v.play().catch(e => console.log("Auto-play error: ", e));
+    //     }
+    //     // --- Aapka naya code yahan khatam hota hai ---
+    // } 
+//     if (data.type === 'video') {
+//     if (data.url.includes('youtube.com') || data.url.includes('youtu.be')) {
+//         // YouTube Video logic (Iframe use karega)
+//         let videoId = data.url.split('v=')[1] || data.url.split('/').pop();
+//         if(videoId.includes('&')) videoId = videoId.split('&')[0];
+        
+//         container.innerHTML = `
+//             <iframe width="100%" height="100%" 
+//                 src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}" 
+//                 frameborder="0" allow="autoplay; encrypted-media" style="border-radius:10px;">
+//             </iframe>`;
+//     } else {
+//         // Normal MP4 logic
+//         container.innerHTML = `
+//             <video id="activeVideo" autoplay muted loop playsinline style="width:100%; height:100%; object-fit:cover;">
+//                 <source src="${data.url}" type="video/mp4">
+//             </video>`;
+//         const v = document.getElementById('activeVideo');
+//         if(v) { v.load(); v.play(); }
+//     }
+// }
+//     else if (data.type === 'image') {
+//         container.innerHTML = `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
+//     }
+//     // ... baki ka code
+// else if (data.type === 'image') {
+//         container.innerHTML = `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
+//     }
+// });
+// }
+
+// function syncMiniScreen() {
+//     const container = document.getElementById('screen-content');
+//     if (!container) return;
+
+//     db.ref('admin_screen').on('value', (snap) => {
+//         const data = snap.val();
+        
+//         // 1. Agar data khali hai
+//         if (!data) {
+//             container.innerHTML = `<div style="padding-top:45px; font-size:10px; opacity:0.3; letter-spacing:2px;">SYSTEM SECURE</div>`;
+//             return;
+//         }
+
+//         // 2. TEXT Handle
+//         if (data.type === 'text') {
+//             container.innerHTML = `
+//                 <div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--neon); font-weight:bold; padding:15px; text-align:center; font-size:14px; text-transform:uppercase; text-shadow: 0 0 10px var(--neon);">
+//                     ${data.content}
+//                 </div>`;
+//         }
+
+//         // 3. IMAGE Handle
+//         else if (data.type === 'image') {
+//             container.innerHTML = `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='https://via.placeholder.com/400x150?text=Invalid+Image+URL'">`;
+//         }
+
+//         // 4. VIDEO (MP4 + YOUTUBE) Handle
+//         else if (data.type === 'video') {
+//             const url = data.url;
+
+//             // YouTube Check
+//             if (url.includes('youtube.com') || url.includes('youtu.be')) {
+//                 let videoId = url.includes('v=') ? url.split('v=')[1].split('&')[0] : url.split('/').pop();
+                
+//                 container.innerHTML = `
+//                     <iframe width="100%" height="100%" 
+//                         src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&rel=0" 
+//                         frameborder="0" allow="autoplay; encrypted-media" style="border:none;">
+//                     </iframe>`;
+//             } 
+//             // Normal MP4 Check
+//             else {
+//                 container.innerHTML = `
+//                     <video id="activeVideo" autoplay muted loop playsinline style="width:100%; height:100%; object-fit:cover;">
+//                         <source src="${url}" type="video/mp4">
+//                     </video>`;
+                
+//                 const v = document.getElementById('activeVideo');
+//                 if (v) { v.load(); v.play().catch(e => console.log("Video Play Error")); }
+//             }
+//         }
+//     });
+// }
+
+
+
+function syncMiniScreen() {
+    const container = document.getElementById('screen-content');
+    if (!container) return;
+
+    db.ref('admin_screen').on('value', (snap) => {
+        const data = snap.val();
+        
+        // 1. Agar data clear hai
+        if (!data) {
+            container.innerHTML = `<div style="padding-top:45px; font-size:10px; opacity:0.3;">SYSTEM SECURE</div>`;
+            return;
+        }
+
+        // 2. TEXT Handle
+        if (data.type === 'text') {
+            container.innerHTML = `<div style="display:flex; align-items:center; justify-content:center; height:100%; color:var(--neon); font-weight:bold; padding:15px; text-align:center; font-size:14px; text-transform:uppercase;">${data.content}</div>`;
+        }
+
+        // 3. IMAGE Handle
+        else if (data.type === 'image') {
+            container.innerHTML = `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
+        }
+
+        // 4. VIDEO (MP4 + YouTube) Handle
+        else if (data.type === 'video') {
+            const url = data.url;
+
+            // --- YouTube Detection Logic ---
+            if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                // Video ID nikalne ka logic
+                let videoId = "";
+                if(url.includes('v=')) {
+                    videoId = url.split('v=')[1].split('&')[0];
+                } else {
+                    videoId = url.split('/').pop();
+                }
+                
+                container.innerHTML = `
+                    <iframe width="100%" height="100%" 
+                        src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}&rel=0" 
+                        frameborder="0" allow="autoplay; encrypted-media" style="border:none;">
+                    </iframe>`;
+            } 
+            // --- Normal MP4 Logic ---
+            else {
+                container.innerHTML = `
+                    <video id="activeVideo" autoplay muted loop playsinline style="width:100%; height:100%; object-fit:cover; background:#000;">
+                        <source src="${url}" type="video/mp4">
+                    </video>`;
+                
+                const v = document.getElementById('activeVideo');
+                if (v) { v.load(); v.play().catch(e => console.log("Play error")); }
+            }
+        }
+    });
+}
     async function submitFinalReport() {
         const reason = document.getElementById('repReason').value;
         const target = document.getElementById('repTargetId').value;
@@ -631,17 +1114,62 @@ input:checked + .slider:before { transform: translateX(20px); }
     }
 
     // --- MANDATORY: HARMFUL WORD BLOCKING ---
-    function checkContentSafety(text) {
-        const lower = text.toLowerCase();
-        if (BANNED_LIST.some(word => lower.includes(word))) {
-            playSound('alert');
-            alert("WARNING: HARMFUL WORDS DETECTED. AUTO-BAN TRIGGERED.");
-            triggerViolation(); 
-            return false;
+    // function checkContentSafety(text) {
+    //     const lower = text.toLowerCase();
+    //     if (BANNED_LIST.some(word => lower.includes(word))) {
+    //         playSound('alert');
+    //         alert("WARNING: HARMFUL WORDS DETECTED. AUTO-BAN TRIGGERED.");
+    //         triggerViolation(); 
+    //         return false;
+    //     }
+    //     return true;
+    // }
+
+
+function checkContentSafety(text) {
+    if (!text) return true;
+    
+    const lower = text.toLowerCase();
+    console.log("Checking text:", lower); // Console mein check karein
+
+    // Check if any banned word is inside the text
+    const hasBannedWord = BANNED_LIST.some(word => lower.includes(word));
+
+    if (hasBannedWord) {
+        console.log("⚠️ Banned word detected!"); 
+
+        // 1. Firebase Report Logic
+        if (typeof db !== 'undefined') {
+            db.ref('reports/chat_violations').push({
+                user: (typeof myUid !== 'undefined') ? myUid : "Anonymous",
+                message: text,
+                timestamp: new Date().toLocaleString(),
+                reason: "Harmful Words"
+            }).then(() => {
+                console.log("✅ Report saved to Firebase");
+            }).catch((err) => {
+                console.error("❌ Firebase Report Error:", err);
+            });
         }
-        return true;
+
+        // 2. Alert (Isko sabse upar rakha hai taaki dikhe)
+        alert("🚨 STRICT WARNING: \nDon't send harmful words. Reported to Admin.");
+        
+        return false; // Stop sending
     }
 
+    return true; // Safe to send
+}
+// User ki screen par warning dikhane ka chota function
+function showWarningUI() {
+    const warnDiv = document.createElement('div');
+    warnDiv.style = "position:fixed; top:0; left:0; width:100%; background:red; color:white; text-align:center; padding:10px; z-index:9999; font-weight:bold;";
+    warnDiv.innerHTML = "⚠️ WARNING: CHAT VIOLATION RECORDED BY SYSTEM";
+    document.body.appendChild(warnDiv);
+    
+    // 5 second baad warning patti hata dein
+    setTimeout(() => warnDiv.remove(), 5000);
+}
     let lastX, lastY, lastZ;
     window.addEventListener('devicemotion', (e) => {
         let acc = e.accelerationIncludingGravity;
@@ -711,10 +1239,27 @@ input:checked + .slider:before { transform: translateX(20px); }
         setTimeout(() => logout(), 1000);
     }
 
+    // function showPage(id) {
+    //     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    //     document.getElementById(id).classList.add('active');
+    //     if(target) target.classList.add('active');
+    // }
     function showPage(id) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
+    // 1. Saare pages se 'active' class hatao
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+
+    // 2. Jo page ID pass ki gayi hai, usey dhoondo
+    const pageToShow = document.getElementById(id);
+
+    // 3. Agar page mil jaye, toh usey active karo
+    if (pageToShow) {
+        pageToShow.classList.add('active');
+    } else {
+        console.error("Page with ID '" + id + "' not found!");
     }
+
+    // ❌ Purani 'if(target)' wali line hata di gayi hai kyunki wo error de rahi thi
+}
 
     // async function checkSavedSession() {
     //     const id = localStorage.getItem('ghost_id');
@@ -732,26 +1277,53 @@ input:checked + .slider:before { transform: translateX(20px); }
     // }
 
 
-    async function checkSavedSession() {
+//     async function checkSavedSession() {
+//     const id = localStorage.getItem('ghost_id');
+//     const pass = localStorage.getItem('ghost_pass');
+//     const email = localStorage.getItem('ghost_email');
+    
+//     if(id && pass) {
+//         if (await checkBanStatus(id)) return;
+//         myUid = id; userPass = pass; userEmail = email;
+//         document.getElementById('myId').innerText = id; 
+        
+//         // YEH LINE ZAROORI HAI: Wapas aane par online status refresh karne ke liye
+//         setOnlineStatus(true); 
+//         startPresenceSystem();
+//         checkAdminStatus();
+//         listenForBroadcast();
+//         loadFriends();
+//         showPage('dash-page'); 
+//         loadFriends();
+//     }
+// }
+
+
+
+async function checkSavedSession() {
     const id = localStorage.getItem('ghost_id');
     const pass = localStorage.getItem('ghost_pass');
-    const email = localStorage.getItem('ghost_email');
     
     if(id && pass) {
-        if (await checkBanStatus(id)) return;
-        myUid = id; userPass = pass; userEmail = email;
-        document.getElementById('myId').innerText = id; 
+        myUid = id; // Sabse pehle UID set karein
+        userPass = pass;
         
-        // YEH LINE ZAROORI HAI: Wapas aane par online status refresh karne ke liye
-        setOnlineStatus(true); 
-        startPresenceSystem();
-        checkAdminStatus();
-        listenForBroadcast();
+        document.getElementById('myId').innerText = id;
+        
+        setOnlineStatus(true);
         loadFriends();
-        showPage('dash-page'); 
+        showPage('dash-page');
     }
 }
     // --- MANDATORY: DUAL-KEY LOGIN ---
+    db.ref('reports/banned_users/' + email.replace(/\./g, ',')).once('value', (snap) => {
+    if (snap.exists()) {
+        alert("Your account/email is blacklisted.");
+        // Login process rok dein
+    } else {
+        // Normal login hone dein
+    }
+});
     async function doAdvancedLogin() {
         const pin = document.getElementById('loginPin').value;
         const id = document.getElementById('loginId').value;
@@ -831,6 +1403,8 @@ input:checked + .slider:before { transform: translateX(20px); }
             db.ref('presence/' + partnerUid).on('value', s => {
                 partnerActive = (s.val() === getRoom());
                 if(s.val() === getRoom()) openChatPage("Secure Private");
+                updateChatPresence('online');
+                listenChatPresence();
             });
         } else {
             openChatPage("Group Chat");
@@ -1003,37 +1577,57 @@ input:checked + .slider:before { transform: translateX(20px); }
 // }
 
 
- function sendMsg() {
+function sendMsg() {
+    console.log("1. sendMsg trigger hua");
     const input = document.getElementById('msgIn');
     const text = input.value.trim();
-    if (!text || !partnerUid) return;
+    
+    if (!text || !partnerUid) {
+        console.log("2. Text ya PartnerUid missing hai");
+        return;
+    }
 
-    // Command Check
-    if (text.startsWith("#")) {
-        handleAdminCommands(text, partnerUid);
+    // Safety Check
+    if (checkContentSafety(text) === false) {
+        console.log("3. Banned word detected, stopping...");
         input.value = "";
         return;
     }
 
-    const room = getRoom();
-    const key = CryptoJS.SHA256(room + SALT).toString();
-    const crypted = CryptoJS.AES.encrypt(text, key).toString();
+    try {
+        // 🛡️ ROOM ID FIX (A_B aur B_A hamesha same hone chahiye)
+        const room = myUid < partnerUid ? myUid + "_" + partnerUid : partnerUid + "_" + myUid;
+        console.log("4. Target Room:", room);
 
-    // INSTANT UI UPDATE (Zero Lag)
-    const flow = document.getElementById('msg-flow');
-    flow.innerHTML += `<div class="msg me" style="opacity:0.8;">${text}</div>`;
-    flow.scrollTop = flow.scrollHeight;
+        // 🔐 ENCRYPTION (Check karein ki SALT aur CryptoJS available hain)
+        if (typeof CryptoJS === 'undefined') {
+            throw new Error("CryptoJS library not found!");
+        }
+        
+        const saltValue = (typeof SALT !== 'undefined') ? SALT : "default_salt";
+        const key = CryptoJS.SHA256(room + saltValue).toString();
+        const crypted = CryptoJS.AES.encrypt(text, key).toString();
+        console.log("5. Encryption Success");
 
-    // Background Send
-    db.ref('chats/' + room + '/msgs').push({
-        sender: myUid,
-        content: crypted,
-        timestamp: Date.now(),
-        seen: false
-    });
+        // 📤 FIREBASE SEND
+        db.ref('chats/' + room + '/msgs').push({
+            sender: myUid,
+            content: crypted,
+            timestamp: Date.now(),
+            seen: false
+        }).then(() => {
+            console.log("6. ✅ Firebase Success: Message sent!");
+            input.value = "";
+            input.focus();
+        }).catch((fbErr) => {
+            console.error("6. ❌ Firebase Error:", fbErr);
+            alert("Firebase Error: " + fbErr.message);
+        });
 
-    input.value = "";
-    input.focus(); // Keypad lock
+    } catch (e) {
+        console.error("❌ Critical Error in sendMsg:", e.message);
+        alert("System Error: " + e.message);
+    }
 }
 
 
@@ -1076,27 +1670,6 @@ input:checked + .slider:before { transform: translateX(20px); }
 
 
 
-// // --- 2. STABLE LIVE BULB (Using Global Status) ---
-// function listenToPartnerPresence() {
-//     if (!partnerUid) return;
-//     const partnerKey = partnerUid.replace(/[^a-zA-Z0-9]/g, ""); 
-    
-//     // Hum wahi node use kar rahe hain jo bahar work kar raha hai
-//     db.ref('online_status/' + partnerKey).on('value', (snap) => {
-//         const bulb = document.getElementById('live-chat-bulb');
-//         const statusText = document.getElementById('live-status-text');
-        
-//         if (snap.exists()) {
-//             bulb.className = "bulb online-now"; // Green color
-//             statusText.innerText = "Active Now";
-//             statusText.style.color = "#00ff88";
-//         } else {
-//             bulb.className = "bulb"; // Gray color
-//             statusText.innerText = "Offline";
-//             statusText.style.color = "#888";
-//         }
-//     });
-// }
 
     function sendViewOnce() {
         const val = document.getElementById('msgIn').value; if(!val) return;
@@ -1301,27 +1874,257 @@ function setTarget(id) {
 // }
 
 
-async function saveFriend() {
-    const fid = document.getElementById('targetId').value;
-    if(!fid || fid.length < 11) return alert("Enter valid 9-digit ID (xxx-xxx-xxx)");
+// async function saveFriend() {
+//     const fid = document.getElementById('targetId').value;
+//     if(!fid || fid.length < 11) return alert("Enter valid 9-digit ID (xxx-xxx-xxx)");
     
-    const fname = prompt("Enter Name for this Contact:");
+//     const fname = prompt("Enter Name for this Contact:");
+//     if(!fname) return;
+
+//     const idKey = myUid.replace(/-/g, ""); // Aapki apni ID
+//     const friendKey = fid.replace(/-/g, ""); // Friend ki ID
+
+//     // Firebase mein aapke account ke andar save hoga
+//     await db.ref('user_vault/' + idKey + '/friends/' + friendKey).set({
+//         id: fid,
+//         name: fname,
+//         addedAt: Date.now()
+//     });
+
+//     alert("Contact Saved Permanently to Cloud!");
+//     loadFriends(); 
+// }
+
+
+// async function saveFriend() {
+//     const fid = document.getElementById('targetId').value;
+//     if(!fid || fid.length < 11) return alert("Enter valid ID (xxx-xxx-xxx)");
+    
+//     const fname = prompt("Enter Name for this Contact:");
+//     if(!fname) return;
+
+//     // Zaroori: Aapki apni ID bina dash ke path banane ke liye
+//     const myKey = myUid.replace(/-/g, ""); 
+//     const friendKey = fid.replace(/-/g, "");
+
+//     // Firebase Cloud Storage
+//     await db.ref('user_vault/' + myKey + '/friends/' + friendKey).set({
+//         id: fid,      // Original ID with dashes
+//         name: fname,
+//         timestamp: Date.now()
+//     });
+
+//     // Local backup (Safe side ke liye)
+//     let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
+//     if(!friends.find(f => f.id === fid)) {
+//         friends.push({ id: fid, name: fname });
+//         localStorage.setItem('ghost_friends', JSON.stringify(friends));
+//     }
+
+//     alert("Contact Saved to Cloud!");
+//     loadFriends(); 
+// }
+
+
+// async function saveFriend() {
+//     const fid = document.getElementById('targetId').value.trim();
+//     if(!fid || fid.length < 11) return alert("Enter valid ID (xxx-xxx-xxx)");
+//     if(!myUid) return alert("Login required!");
+
+//     const fname = prompt("Enter Name for this Contact:");
+//     if(!fname) return;
+
+//     // Firebase Path: account_vault -> user-id -> my_friends
+//     const myKey = myUid.replace(/-/g, ""); 
+//     const friendKey = fid.replace(/-/g, "");
+
+//     try {
+//         await db.ref('account_vault/' + myKey + '/my_friends/' + friendKey).set({
+//             id: fid,
+//             name: fname,
+//             timestamp: Date.now()
+//         });
+//         alert("Contact Saved Permanently!");
+//         loadFriends();
+//     } catch (e) {
+//         alert("Error: " + e.message);
+//     }
+// }
+
+
+// async function saveFriend() {
+//     console.log("Save function started...");
+    
+//     const targetInput = document.getElementById('targetId');
+//     if (!targetInput) return alert("Target ID input not found!");
+    
+//     const fid = targetInput.value.trim();
+//     if(!fid || fid.length < 11) return alert("Enter 9-digit ID (xxx-xxx-xxx)");
+    
+//     // Check if myUid is available
+//     if(!myUid) {
+//         alert("Error: Your ID not found. Please re-login.");
+//         return;
+//     }
+
+//     const fname = prompt("Enter Name for this Contact:");
+//     if(!fname) return;
+
+//     const myKey = myUid.replace(/-/g, ""); 
+//     const friendKey = fid.replace(/-/g, "");
+    
+//     // Exact path in Firebase
+//     const path = 'account_vault/' + myKey + '/my_friends/' + friendKey;
+//     console.log("Saving to path:", path);
+
+//     try {
+//         await db.ref(path).set({
+//             id: fid,
+//             name: fname,
+//             savedAt: Date.now()
+//         });
+        
+//         alert("Contact Saved to Cloud!");
+//         targetInput.value = "";
+//         loadFriends(); // Refresh list
+//     } catch (e) {
+//         console.error("Firebase Write Error:", e);
+//         alert("Firebase Error: " + e.message);
+//     }
+// }
+
+// 1. SAVE FUNCTION
+// --- FRIEND SYSTEM ---
+async function saveFriend() {
+    const fid = document.getElementById('targetId').value.trim();
+    if(!fid || fid.length < 11) return alert("Invalid ID format");
+    if(!myUid) return alert("Login first!");
+
+    const fname = prompt("Contact Name:");
     if(!fname) return;
 
-    const idKey = myUid.replace(/-/g, ""); // Aapki apni ID
-    const friendKey = fid.replace(/-/g, ""); // Friend ki ID
-
-    // Firebase mein aapke account ke andar save hoga
-    await db.ref('user_vault/' + idKey + '/friends/' + friendKey).set({
-        id: fid,
-        name: fname,
-        addedAt: Date.now()
-    });
-
-    alert("Contact Saved Permanently to Cloud!");
-    loadFriends(); 
+    const myKey = myUid.replace(/-/g, ""); 
+    const friendKey = fid.replace(/-/g, "");
+    
+    // Exact path: account_vault -> MyID -> friends -> FriendID
+    try {
+        await db.ref('account_vault/' + myKey + '/friends/' + friendKey).set({
+            id: fid,
+            name: fname,
+            timestamp: Date.now()
+        });
+        alert("Saved to Cloud!");
+        loadFriends();
+    } catch (e) { alert("Error: " + e.message); }
 }
 
+function loadFriends() {
+    if(!myUid) return;
+    const myKey = myUid.replace(/-/g, "");
+    const container = document.getElementById('friend-list-container');
+    if(!container) return;
+
+    db.ref('account_vault/' + myKey + '/friends').on('value', snap => {
+        container.innerHTML = '<h4 style="color:var(--neon); font-size:12px; text-align:left;">CONTACTS</h4>';
+        if(!snap.exists()) {
+            container.innerHTML += '<p style="font-size:10px; opacity:0.5;">No contacts found.</p>';
+            return;
+        }
+        snap.forEach(child => {
+            const f = child.val();
+            const fKey = child.key;
+            container.innerHTML += `
+                <div class="contact-card">
+                    <div style="display:flex; align-items:center;">
+                        <span class="bulb" id="bulb-${fKey}"></span>
+                         watchPartnerStatus(partnerUid);
+                        <div style="text-align:left;">
+                            <div style="font-size:13px; font-weight:bold;">${f.name}</div>
+                            <div style="font-size:9px; opacity:0.5;">${f.id}</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn-neon" style="padding:4px 8px; font-size:9px;" onclick="setTarget('${f.id}')">CHAT</button>
+                        <button onclick="deleteFriend('${f.id}')" style="background:none; border:none; color:var(--danger);"><i class="fas fa-trash"></i></button>
+                    </div>
+                </div>`;
+            // Online Status Sync
+            db.ref('online_status/' + fKey).on('value', s => {
+                const b = document.getElementById('bulb-' + fKey);
+                 watchPartnerStatus(partnerUid);
+                if(b) b.className = s.exists() ? 'bulb online-now' : 'bulb';
+            });
+        });
+    });
+}
+
+
+
+
+// // 2. LOAD FUNCTION
+// function loadFriends() {
+//     if (!myUid) return;
+//     const myKey = myUid.replace(/-/g, "");
+//     const container = document.getElementById('friend-list-container');
+//     if(!container) return;
+
+//     // Firebase Listener
+//     db.ref('account_vault/' + myKey + '/friends').on('value', snap => {
+//         container.innerHTML = '<h4 style="font-size:12px; color:var(--neon); text-align:left; margin-bottom:10px;">SECURE CONTACTS</h4>';
+        
+//         if (!snap.exists()) {
+//             container.innerHTML += `<p style="font-size:10px; opacity:0.4;">No saved contacts.</p>`;
+//             return;
+//         }
+
+//         snap.forEach(child => {
+//             const friend = child.val();
+//             const fKey = child.key;
+            
+//             const card = document.createElement('div');
+//             card.className = 'contact-card';
+//             card.innerHTML = `
+//                 <div style="display:flex; align-items:center;">
+//                     <span class="bulb" id="bulb-${fKey}"></span>
+//                     <div style="text-align:left; margin-left:10px;">
+//                         <div style="font-size:13px; font-weight:bold; color:#fff;">${friend.name}</div>
+//                         <div style="font-size:9px; opacity:0.5;">${friend.id}</div>
+//                     </div>
+//                 </div>
+//                 <div style="display:flex; align-items:center;">
+//                     <button class="btn-neon" style="padding:4px 8px; font-size:9px;" onclick="setTarget('${friend.id}')">CHAT</button>
+//                     <button onclick="deleteFriend('${friend.id}')" style="background:none; border:none; color:#ff4444; margin-left:10px; cursor:pointer;"><i class="fas fa-trash"></i></button>
+//                 </div>`;
+//             container.appendChild(card);
+
+//             // Online status sync
+//             db.ref('online_status/' + fKey).on('value', s => {
+//                 const bulb = document.getElementById(`bulb-${fKey}`);
+//                 if (bulb) {
+//                     if (s.exists()) bulb.classList.add('online');
+//                     else bulb.classList.remove('online');
+//                 }
+//             });
+//         });
+//     });
+// }
+
+// 3. DELETE FUNCTION
+// async function deleteFriend(fid) {
+//     if(!confirm("Delete this contact permanently?")) return;
+    
+//     const myKey = myUid.replace(/-/g, "");
+//     const friendKey = fid.replace(/-/g, "");
+//     const path = 'account_vault/' + myKey + '/friends/' + friendKey;
+
+//     try {
+//         await db.ref(path).remove();
+//         console.log("Deleted from Cloud Path:", path);
+//         // List will auto-refresh due to .on() listener in loadFriends
+//     } catch (e) {
+//         console.error("Delete Error:", e);
+//     }
+// }
 // function deleteFriend(id) {
 //     if(!confirm("Remove this contact?")) return;
 //     let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
@@ -1406,105 +2209,46 @@ async function deleteFriend(fid) {
     }
 }
 
-// function loadFriends() {
-//     // Ensure the container exists in the Dash Page
-//     let container = document.getElementById('friend-list-container');
-//     if (!container) {
-//         const dashCard = document.querySelector('#dash-page .glass-card');
-//         container = document.createElement('div');
-//         container.id = 'friend-list-container';
-//         dashCard.appendChild(container);
-//     }
-
-//     let friends = JSON.parse(localStorage.getItem('ghost_friends') || '[]');
-//     container.innerHTML = '<h4 style="font-size:12px; color:var(--neon); text-align:left;">SECURE CONTACTS</h4>';
-
-//     if (friends.length === 0) {
-//         container.innerHTML += `<p style="font-size:10px; opacity:0.4;">No contacts saved.</p>`;
-//         return;
-//     }
-
-//     friends.forEach(friend => {
-//         const friendKey = friend.id.replace(/-/g, "");
-//         const card = document.createElement('div');
-//         card.className = 'contact-card';
-//         card.innerHTML = `
-//             <div style="display:flex; align-items:center;">
-//                 <span class="bulb" id="bulb-${friendKey}"></span>
-//                 watchPartnerStatus(partnerUid);
-//                 <div style="text-align:left;">
-//                     <div style="font-size:13px; font-weight:bold;">${friend.name}</div>
-//                     <div style="font-size:9px; opacity:0.5;">${friend.id}</div>
-//                     startPresenceSystem();
-//                 </div>
-//             </div>
-//             <div>
-//                 <button class="btn-neon" style="padding:5px 8px; font-size:9px;" onclick="setTarget('${friend.id}')">CHAT</button>
-//                 <button class="delete-contact" onclick="deleteFriend('${friend.id}')"><i class="fas fa-trash"></i></button>
-//             </div>
-//         `;
-//         container.appendChild(card);
-
-//         // Real-time Status Listener
-//         db.ref('online_status/' + friendKey).on('value', snap => {
-//             const bulb = document.getElementById(`bulb-${friendKey}`);
-//             watchPartnerStatus(partnerUid);
-//             if (bulb) {
-//                 if (snap.exists()) {
-//                     bulb.classList.add('online');
-//                     startPresenceSystem();
-//                 } else {
-//                     bulb.classList.remove('online');
-//                 }
-//             }
-//         });
-//     });
-// }
-
 
 
 
 function loadFriends() {
-    let container = document.getElementById('friend-list-container');
-    if (!container) return; // Ensure container exists
+    if (!myUid) return;
+    const container = document.getElementById('friend-list-container');
+    const myKey = myUid.replace(/-/g, "");
 
-    const idKey = myUid.replace(/-/g, "");
-    
-    // Firebase se aapke friends ki list uthao
-    db.ref('user_vault/' + idKey + '/friends').on('value', snap => {
-        container.innerHTML = '<h4 style="font-size:12px; color:var(--neon); text-align:left;">SECURE CLOUD CONTACTS</h4>';
+    // Live sync from account_vault
+    db.ref('account_vault/' + myKey + '/my_friends').on('value', snap => {
+        container.innerHTML = '<h4 style="font-size:12px; color:var(--neon); text-align:left;">SECURE CONTACTS</h4>';
         
         if (!snap.exists()) {
-            container.innerHTML += `<p style="font-size:10px; opacity:0.4;">No permanent contacts found.</p>`;
+            container.innerHTML += `<p style="font-size:10px; opacity:0.4; padding:10px;">No saved contacts.</p>`;
             return;
         }
 
         snap.forEach(child => {
             const friend = child.val();
-            const friendKey = child.key;
+            const fKey = child.key; // friend's ID without hyphen
             
             const card = document.createElement('div');
             card.className = 'contact-card';
             card.innerHTML = `
                 <div style="display:flex; align-items:center;">
-                    <span class="bulb" id="bulb-${friendKey}"></span>
-                     watchPartnerStatus(partnerUid);
+                    <span class="bulb" id="bulb-${fKey}"></span>
                     <div style="text-align:left; margin-left:10px;">
                         <div style="font-size:13px; font-weight:bold;">${friend.name}</div>
                         <div style="font-size:9px; opacity:0.5;">${friend.id}</div>
                     </div>
                 </div>
                 <div>
-                    <button class="btn-neon" style="padding:5px 8px; font-size:9px;" onclick="setTarget('${friend.id}')">CHAT</button>
-                    <button class="delete-contact" onclick="deleteFriend('${friend.id}')" style="background:none; border:none; color:#ff4444; margin-left:5px;"><i class="fas fa-trash"></i></button>
-                </div>
-            `;
+                    <button class="btn-neon" style="padding:4px 8px; font-size:9px;" onclick="setTarget('${friend.id}')">CHAT</button>
+                    <button onclick="deleteFriend('${friend.id}')" style="background:none; border:none; color:#ff4444; margin-left:8px; cursor:pointer;"><i class="fas fa-trash"></i></button>
+                </div>`;
             container.appendChild(card);
 
-            // Real-time Status Listener for this friend
-            db.ref('online_status/' + friendKey).on('value', s => {
-                const bulb = document.getElementById(`bulb-${friendKey}`);
-                 watchPartnerStatus(partnerUid);
+            // Real-time Presence for this friend
+            db.ref('online_status/' + fKey).on('value', s => {
+                const bulb = document.getElementById(`bulb-${fKey}`);
                 if (bulb) {
                     if (s.exists()) bulb.classList.add('online');
                     else bulb.classList.remove('online');
@@ -1513,6 +2257,7 @@ function loadFriends() {
         });
     });
 }
+
 
 function setTarget(id) {
     document.getElementById('targetId').value = id;
@@ -1773,82 +2518,7 @@ function showRequests() {
     });
 }
 
-// 4. Update the sendMsg function to handle requests
-// If sender is not in recipient's contact list, it goes to /requests/
-// async function sendMsg() {
-//     const text = document.getElementById('msgIn').value.trim();
-//     if(!text) return;
-//     if(!checkContentSafety(text)) return;
 
-//     const encryptKey = CryptoJS.SHA256(userPass + SALT).toString();
-//     const crypted = CryptoJS.AES.encrypt(text, encryptKey).toString();
-    
-//     const targetIdKey = partnerUid.replace(/-/g, "");
-    
-//     // Check if I am in their contact list (Simplified for demo: sending request if it's a new interaction)
-//     db.ref('id_to_email/' + targetIdKey).once('value', async (s) => {
-//         if(s.exists()) {
-//             // Standard message logic
-//             db.ref('chats/' + getRoom() + '/msgs').push({
-//                 sender: myUid,
-//                 content: crypted,
-//                 timestamp: Date.now()
-//             });
-            
-//             // Also push to requests node so they see a notification if they haven't saved you
-//             db.ref('requests/' + targetIdKey + '/' + myUid.replace(/-/g,"")).set({
-//                 text: "Sent you a message",
-//                 timestamp: Date.now()
-//             });
-//         }
-//     });
-
-//     document.getElementById('msgIn').value = "";
-//     playSound('msgSend');
-// }
-
-// --- FULL STABLE SEND FUNCTION (Keypad Fixed) ---
-
-async function sendMsg() {
-    const input = document.getElementById('msgIn');
-    const text = input.value.trim();
-    
-    // 1. Agar text khali hai toh kuch mat karo
-    if(!text || !partnerUid) return;
-
-    // 2. Encryption Logic (Shared Room Key use kar rahe hain)
-    const room = getRoom();
-    const key = CryptoJS.SHA256(room + SALT).toString();
-    const crypted = CryptoJS.AES.encrypt(text, key).toString();
-    
-    // 3. Firebase mein message bhejna
-    try {
-        await db.ref('chats/' + room + '/msgs').push({
-            sender: myUid,
-            content: crypted,
-            timestamp: Date.now(),
-            seen: false
-        });
-
-        // Typing status hatao message bhejte hi
-        db.ref('typing/' + room + '/' + myUid.replace(/-/g, "")).remove();
-
-        // 4. --- KEYPAD KO ROKNE KA LOGIC ---
-        input.value = ""; // Text box khali karo
-        
-        // Mobile ko force karo ki keypad khula rahe
-        input.focus(); 
-        
-        // 5. Chat window ko auto-scroll karo niche
-        const flow = document.getElementById('msg-flow');
-        if(flow) flow.scrollTop = flow.scrollHeight;
-
-        playSound('msgSend');
-
-    } catch (e) {
-        console.error("Sending failed:", e);
-    }
-}
 
 // 6. "Enter" button press karne par keypad hide nahi hoga
 document.getElementById('msgIn').addEventListener('keydown', function(e) {
@@ -1862,71 +2532,6 @@ document.getElementById('msgIn').addEventListener('keydown', function(e) {
 
 // --- CRITICAL FIX: DISPLAY TEXT NOT ID ---
 
-function listen() {
-    const room = getRoom();
-    db.ref('chats/' + room + '/msgs').on('value', snap => {
-        const flow = document.getElementById('msg-flow');
-        flow.innerHTML = ""; // Clear flow to redraw
-        
-        snap.forEach(child => {
-            const data = child.val();
-            const isMe = data.sender === myUid;
-            
-            try {
-                // Use the shared SALT and userPass to decrypt
-                const decryptKey = CryptoJS.SHA256(userPass + SALT).toString();
-                const bytes = CryptoJS.AES.decrypt(data.content, decryptKey);
-                const decryptedText = bytes.toString(CryptoJS.enc.Utf8);
-
-                // If decryption fails, text will be empty
-                const displayMsg = decryptedText || "[Encrypted Message]";
-
-                flow.innerHTML += `
-                    <div class="msg ${isMe ? 'me' : 'other'}" onclick="${isMe ? `deleteMyMsg('${child.key}')` : ''}">
-                        <span class="sender-tag">${data.sender}</span>
-                        ${displayMsg}
-                        ${isMe ? '<span class="receipt"><i class="fas fa-check-double"></i></span>' : ''}
-                    </div>
-                `;
-            } catch (e) {
-                flow.innerHTML += `<div class="msg other"><small>[Decryption Error]</small></div>`;
-            }
-        });
-        flow.scrollTop = flow.scrollHeight; // Auto-scroll to bottom
-    });
-}
-
-// --- FIXED SEND FUNCTION ---
-async function sendMsg() {
-    const textInput = document.getElementById('msgIn');
-    const text = textInput.value.trim();
-    
-    if(!text || !partnerUid) return;
-    if(!checkContentSafety(text)) return;
-
-    // Encrypt the message before sending
-    const encryptKey = CryptoJS.SHA256(userPass + SALT).toString();
-    const crypted = CryptoJS.AES.encrypt(text, encryptKey).toString();
-    
-    const room = getRoom();
-    
-    // Push to the chat room
-    await db.ref('chats/' + room + '/msgs').push({
-        sender: myUid,
-        content: crypted,
-        timestamp: Date.now()
-    });
-
-    // Also notify the Request system if they haven't added you
-    const targetKey = partnerUid.replace(/-/g, "");
-    db.ref('requests/' + targetKey + '/' + myUid.replace(/-/g,"")).set({
-        text: "New Message",
-        timestamp: Date.now()
-    });
-
-    textInput.value = ""; // Clear input
-    playSound('msgSend');
-}
 
 
 // --- FINAL PERFORMANCE & READABILITY FIX ---
@@ -1977,44 +2582,154 @@ async function sendMsg() {
     const input = document.getElementById('msgIn');
     const text = input.value.trim();
     
-    if(!text || !partnerUid) return;
-    if(!checkContentSafety(text)) return;
+    // 1. Basic Check
+    if (!text || !partnerUid || !myUid) return;
 
-    // Encrypt using the SHARED Room Key
-    const crypted = CryptoJS.AES.encrypt(text, getSecureKey()).toString();
-    
-    const room = getRoom();
-    
-    // Send message to Firebase
-    db.ref('chats/' + room + '/msgs').push({
-        sender: myUid,
-        content: crypted,
-        timestamp: Date.now()
-    });
+    // 2. Safety Check (Alert & Report)
+    if (!checkContentSafety(text)) {
+        input.value = "";
+        return;
+    }
 
-    // Notify recipient (Ignore/Request System)
-    const targetKey = partnerUid.replace(/-/g, "");
-    db.ref('requests/' + targetKey + '/' + myUid.replace(/-/g,"")).set({
-        text: "New Message",
-        timestamp: Date.now()
-    });
+    // 3. Admin Command Check
+    if (text.startsWith("#")) {
+        if (typeof executeCommand === 'function') executeCommand(text);
+        else if (typeof handleAdminCommands === 'function') handleAdminCommands(text, partnerUid);
+        input.value = "";
+        return;
+    }
 
-    input.value = ""; 
-    playSound('msgSend');
+    // 4. Room & Encryption Logic
+    const room = getRoom(); // Sahi room (Alphabetical Sort wala)
+    const key = CryptoJS.SHA256(room + SALT).toString();
+    const crypted = CryptoJS.AES.encrypt(text, key).toString();
+
+    // 5. Instant UI Update (Taki message turant dikhe)
+    const flow = document.getElementById('msg-flow');
+    if (flow) {
+        flow.innerHTML += `<div class="msg me" style="opacity:0.8;">${text}</div>`;
+        flow.scrollTop = flow.scrollHeight;
+    }
+
+    try {
+        // 6. Firebase mein bhejna
+        await db.ref('chats/' + room + '/msgs').push({
+            sender: myUid,
+            content: crypted,
+            timestamp: Date.now(),
+            seen: false
+        });
+
+        // 7. Request System Update (Taki doosre ko pata chale message aaya hai)
+        const targetKey = partnerUid.replace(/-/g, "");
+        db.ref('requests/' + targetKey + '/' + myUid.replace(/-/g,"")).set({
+            text: "New Message",
+            timestamp: Date.now()
+        });
+
+        // Final cleanup
+        input.value = "";
+        input.focus();
+        if (typeof playSound === 'function') playSound('msgSend');
+
+    } catch (e) {
+        console.error("Final Send Error:", e);
+    }
 }
-
-// 4. Fixed Room Generation (Ensures both users enter the SAME room)
 function getRoom() {
     if (!myUid || !partnerUid) return "lobby";
-    if (chatType === 'group') return "group_" + partnerUid;
-    
-    // Alphabetical sort ensures User A and User B always share the same ID
+    // Ye line ensure karti hai ki A_B aur B_A hamesha same "private_A_B" folder mein jayein
     const ids = [myUid.replace(/-/g,""), partnerUid.replace(/-/g,"")].sort();
     return "private_" + ids[0] + "_" + ids[1];
 }
 
+function listen() {
+    const room = getRoom();
+    const flow = document.getElementById('msg-flow');
+    if (!flow) return;
 
+    // 1. Purani chats saaf karein jab naya room khule
+    flow.innerHTML = ""; 
+    
+    // 2. Pehle se chal rahe listener ko band karein
+    db.ref('chats/' + room + '/msgs').off();
 
+    // 3. FAST LISTENER: Sirf naye/ek-ek message ko handle karega
+    const key = CryptoJS.SHA256(room + SALT).toString();
+
+    db.ref('chats/' + room + '/msgs').limitToLast(50).on('child_added', snap => {
+        const data = snap.val();
+        const isMe = data.sender === myUid;
+        
+        try {
+            // Decrypt only this single message
+            const bytes = CryptoJS.AES.decrypt(data.content, key);
+            const decryptedText = bytes.toString(CryptoJS.enc.Utf8);
+            const displayMsg = decryptedText || "[Encrypted]";
+
+            // Naya message purane mein JODNA hai (+=), poora saaf nahi karna
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `msg ${isMe ? 'me' : 'other'}`;
+            msgDiv.innerHTML = `
+                <span class="sender-tag">${isMe ? 'You' : 'Partner'}</span>
+                <div class="text">${displayMsg}</div>
+            `;
+            
+            flow.appendChild(msgDiv);
+            
+            // Auto-scroll turant niche
+            flow.scrollTop = flow.scrollHeight;
+
+        } catch (e) {
+            console.error("Decryption error", e);
+        }
+    });
+}
+
+// function listen() {
+//     const room = getRoom(); // Alphabetical Room ID (Sync fix)
+//     console.log("Listening to room:", room);
+
+//     // .off() zaroor lagayein taaki purane user ki chat mix na ho
+//     db.ref('chats/' + room + '/msgs').off();
+
+//     // limitToLast(50) performance ke liye achha hai
+//     db.ref('chats/' + room + '/msgs').limitToLast(50).on('value', snap => {
+//         const flow = document.getElementById('msg-flow');
+//         if (!flow) return;
+        
+//         flow.innerHTML = ""; // Screen clear karein
+        
+//         // Sahi Key generate karein (Jo sendMsg mein use ki thi)
+//         const key = CryptoJS.SHA256(room + SALT).toString();
+
+//         snap.forEach(child => {
+//             const data = child.val();
+//             const isMe = data.sender === myUid;
+            
+//             try {
+//                 // Decrypt the message
+//                 const bytes = CryptoJS.AES.decrypt(data.content, key);
+//                 const decryptedText = bytes.toString(CryptoJS.enc.Utf8);
+
+//                 // Agar decrypt nahi hua toh alert dikhao
+//                 const displayMsg = decryptedText ? decryptedText : "[Encrypted Message]";
+
+//                 flow.innerHTML += `
+//                     <div class="msg ${isMe ? 'me' : 'other'}" onclick="${isMe ? `deleteMyMsg('${child.key}')` : ''}">
+//                         <span class="sender-tag">${isMe ? 'You' : 'Partner'}</span>
+//                         <div class="text">${displayMsg}</div>
+//                     </div>
+//                 `;
+//             } catch (e) {
+//                 flow.innerHTML += `<div class="msg other"><small>[Decryption Error]</small></div>`;
+//             }
+//         });
+        
+//         // Auto-scroll to bottom
+//         flow.scrollTop = flow.scrollHeight;
+//     });
+// }
 // --- KEYBOARD & SPACING FIX ---
 
 function applyDashboardSpacing() {
@@ -2106,7 +2821,7 @@ function loadFriends() {
         return;
     }
 
-    // Add each friend to the container
+ 
     friends.forEach(friend => {
         const friendKey = friend.id.replace(/-/g, "");
         const card = document.createElement('div');
@@ -2128,7 +2843,7 @@ function loadFriends() {
         `;
         container.appendChild(card);
 
-        // Re-attach status listeners
+    
         db.ref('online_status/' + friendKey).on('value', s => {
             const b = document.getElementById(`bulb-${friendKey}`);
             
@@ -2144,24 +2859,17 @@ function loadFriends() {
 }
 
 
-
-
-
-// --- LIVE CHAT PRESENCE (GREEN BULB) ---
-
 function trackChatPresence() {
     const room = getRoom();
     startPresenceSystem();
     const myKey = myUid.replace(/-/g, "");
     const partnerKey = partnerUid.replace(/-/g, "");
 
-    // 1. Jab main chat page pe aaun, toh Firebase ko batao
     const presenceRef = db.ref(`chat_presence/${room}/${myKey}`);
      watchPartnerStatus(partnerUid);
     presenceRef.set(true);
-    presenceRef.onDisconnect().remove(); // App band hote hi status hata do
+    presenceRef.onDisconnect().remove(); 
 
-    // 2. Partner ka status check karo
     db.ref(`chat_presence/${room}/${partnerKey}`).on('value', (snap) => {
         const bulb = document.getElementById('live-chat-bulb');
         if (snap.exists() && snap.val() === true) {
@@ -2172,15 +2880,12 @@ function trackChatPresence() {
     });
 }
 
-// Is function ko openChatPage ke andar call karein
 const originalChatOpen = openChatPage;
 openChatPage = function(title) {
     originalChatOpen(title);
-  //  watchPartnerStatus(partnerUid);
-    trackChatPresence(); // Bulb check shuru karo
+    trackChatPresence(); 
 };
 
-// Jab chat se bahar jayein toh status remove karein
 function leaveChat() {
     const room = getRoom();
     const myKey = myUid.replace(/-/g, "");
@@ -2188,23 +2893,11 @@ function leaveChat() {
     showPage('dash-page');
 }
 
-
-
-
-
-
-
-
-
-
-
-// --- FIXED GREEN BULB LOGIC ---
-
 function updateChatPresence(status) {
     if (!myUid || !partnerUid) return;
     
     const room = getRoom();
-    const myKey = myUid.replace(/[^a-zA-Z0-9]/g, ""); // Clean ID for Firebase
+    const myKey = myUid.replace(/[^a-zA-Z0-9]/g, ""); 
     
     if (status === 'online') {
         db.ref(`chat_presence/${room}/${myKey}`).set(true);
@@ -2238,74 +2931,52 @@ function listenToPartnerPresence() {
     });
 }
 
-// Apne existing openChatPage function ke niche ye do lines add karein:
-// updateChatPresence('online');
-// listenToPartnerPresence();
-
-// Aur jab user page change kare (back jaye ya logout kare):
-// updateChatPresence('offline');
 
 
 
 
-// // Har user ka apna online status set karne ke liye
-// function setPresence() {
-//     if (!myUid) return;
-//     const myKey = myUid.replace(/[^a-zA-Z0-9]/g, "");
-//     const statusRef = db.ref('online_status/' + myKey);
+function listenChatPresence() {
+    if (!myUid || !partnerUid) return;
 
-//     statusRef.set(true);
-//     statusRef.onDisconnect().remove(); // Phone back ya internet jane par auto-offline
-// }
+    const room = getRoom();
+    const partnerKey = partnerUid.replace(/[^a-zA-Z0-9]/g, ""); 
+    const bulb = document.getElementById('status-bulb'); 
 
-// // Partner ka bulb dekhne ke liye (Inside Chat and Outside)
-// function monitorPartner(uid, bulbId, textId) {
-//     if (!uid) return;
-//     const pKey = uid.replace(/[^a-zA-Z0-9]/g, "");
-
-//     db.ref('online_status/' + pKey).on('value', (snap) => {
-//         const bulb = document.getElementById(bulbId);
-//         const txt = document.getElementById(textId);
-        
-//         if (snap.exists() && snap.val() === true) {
-//             if(bulb) bulb.className = "bulb online-now";
-//             if(txt) { txt.innerText = "Active Now"; txt.style.color = "#00ff88"; }
-//         } else {
-//             if(bulb) bulb.className = "bulb";
-//             if(txt) { txt.innerText = "Offline"; txt.style.color = "#888"; }
-//         }
-//     });
-// }
+    
+    db.ref(`chat_presence/${room}/${partnerKey}`).on('value', (snap) => {
+        if (snap.exists() && snap.val() === true) {
+            console.log("Partner is in the chat!");
+            if (bulb) {
+                bulb.style.backgroundColor = "#00ff00"; 
+                bulb.classList.add('online-glow'); 
+            }
+        } else {
+            console.log("Partner left the chat.");
+            if (bulb) {
+                bulb.style.backgroundColor = "#808080"; 
+                bulb.classList.remove('online-glow');
+            }
+        }
+    });
+}
 
 
 
 
-
-
-
-
-
-
-
-// --- 1. GLOBAL PRESENCE SYSTEM (Bulb & Back Button Fix) ---
 function setMyPresence() {
     if (!myUid) return;
     const myKey = myUid.replace(/[^a-zA-Z0-9]/g, "");
-    
-    // Online aate hi Database update karo
     const ref = db.ref('online_status/' + myKey);
      
     ref.set(true);
-    ref.onDisconnect().remove(); // Net jane par offline
+    ref.onDisconnect().remove(); 
 }
 
-// Phone ka Back button ya App Minimize detect karne ke liye
 document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === 'visible') {
-        setMyPresence(); // App khulte hi Green
+        setMyPresence(); 
          
     } else {
-        // App background me jate hi Offline
         if (myUid) {
             const myKey = myUid.replace(/[^a-zA-Z0-9]/g, "");
             db.ref('online_status/' + myKey).remove();
@@ -2313,7 +2984,6 @@ document.addEventListener("visibilitychange", () => {
     }
 });
 
-// Partner ka bulb monitor karo
 function watchPartnerPresence() {
     if (!partnerUid) return;
     const pKey = partnerUid.replace(/[^a-zA-Z0-9]/g, "");
@@ -2323,71 +2993,28 @@ function watchPartnerPresence() {
         const txt = document.getElementById('live-status-text');
         
         if (snap.exists() && snap.val() === true) {
-            if(bulb) bulb.className = "bulb online-now"; // Green Glow
+            if(bulb) bulb.className = "bulb online-now"; 
             if(txt) { txt.innerText = "Active Now"; txt.style.color = "#00ff88"; }
         } else {
-            if(bulb) bulb.className = "bulb"; // Gray
+            if(bulb) bulb.className = "bulb"; 
             if(txt) { txt.innerText = "Offline"; txt.style.color = "#888"; }
         }
     });
 }
 
-// --- 2. FAST MESSAGE SENDING (No Lag + Command Check) ---
-function sendMsg() {
-    const input = document.getElementById('msgIn');
-    const text = input.value.trim();
-    if (!text || !partnerUid) return;
-
-    // A. COMMAND INTERCEPTOR (Agar # hai to message mat bhejo)
-    if (text.startsWith("#")) {
-        executeCommand(text);
-        input.value = "";
-        input.focus();
-        return;
-    }
-
-    // B. INSTANT UI UPDATE (Optimistic - Bina wait kiye screen pe dikhao)
-    const flow = document.getElementById('msg-flow');
-    // Temporary message dikha do taaki user ko lage fast gaya
-    flow.innerHTML += `<div class="msg me" style="opacity:0.8;">${text}</div>`; 
-    flow.scrollTop = flow.scrollHeight;
-
-    // C. BACKGROUND SENDING
-    const room = getRoom();
-    const key = CryptoJS.SHA256(room + SALT).toString();
-    const crypted = CryptoJS.AES.encrypt(text, key).toString();
-
-    db.ref('chats/' + room + '/msgs').push({
-        sender: myUid,
-        content: crypted,
-        timestamp: Date.now(),
-        seen: false
-    });
-
-    // D. KEYPAD STABILITY (Phone ko "dhoka" do ki typing chalu hai)
-    input.value = "";
-    input.focus();
-}
-
-// Enter key support
 document.getElementById('msgIn').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
         e.preventDefault();
         sendMsg();
     }
 });
-
-// --- 3. COMMAND LOGIC (Wipe & Unwipe) ---
 function executeCommand(cmdText) {
     const cmd = cmdText.toUpperCase().trim();
     const room = getRoom();
 
     if (cmd === "#WIPE_DEVICE") {
-        // User Block
         db.ref('users/' + partnerUid).update({ isBlocked: true, status: "WIPED" });
-        // History Delete
         db.ref('chats/' + room + '/msgs').remove();
-        // Online Status Kill
         db.ref('online_status/' + partnerUid.replace(/[^a-zA-Z0-9]/g, "")).remove();
         alert("🚨 TARGET WIPED & BLOCKED");
     }
@@ -2397,9 +3024,6 @@ function executeCommand(cmdText) {
         alert("✅ TARGET UNBLOCKED");
     }
 }
-
-// --- 4. SECURITY GUARD (Ye code har user ke phone me chalega) ---
-// Agar koi block hua to turant bahar nikalo
 function startSecurityGuard() {
     if(!myUid) return;
     db.ref('users/' + myUid + '/isBlocked').on('value', (snap) => {
@@ -2413,17 +3037,8 @@ function startSecurityGuard() {
         }
     });
 }
-
-// --- INITIALIZATION ---
-// Jab login ho jaye ya page load ho:
-setMyPresence();      // Khud ko online karo
-startSecurityGuard(); // Security check chalu karo
-// Jab chat page open ho tab: watchPartnerPresence(); call karna mat bhulna.
-
-
-// --- MASTER CONTROLLER (Ready to Use) ---
-
-// 1. Khud ko Online karne ka system
+setMyPresence();     
+startSecurityGuard(); 
 function activateMyPresence() {
     if (!myUid) return;
     const myKey = myUid.replace(/[^a-zA-Z0-9]/g, "");
@@ -2431,8 +3046,6 @@ function activateMyPresence() {
     ref.set(true);
     ref.onDisconnect().remove();
 }
-
-// 2. Partner ka Bulb dekhne ka system
 function startBulbWatch(targetUid) {
     if (!targetUid) return;
     const pKey = targetUid.replace(/[^a-zA-Z0-9]/g, "");
@@ -2451,20 +3064,16 @@ function startBulbWatch(targetUid) {
         }
     });
 }
-
-// 3. Button Click Handler (Jo aapne manga tha)
 function handlePrivateBtn() {
     if (typeof partnerUid !== 'undefined' && partnerUid) {
-        startBulbWatch(partnerUid); // Bulb chalu
-        startGhost('private');      // Aapka function
-        playSound('click');         // Sound
+        startBulbWatch(partnerUid); 
+        startGhost('private');      
+        playSound('click');         
         console.log("Bulb watching started for: " + partnerUid);
     } else {
         alert("Error: No partner selected!");
     }
 }
-
-// 4. Security Guard (Wipe detection)
 function runSecurity() {
     if (!myUid) return;
     db.ref('users/' + myUid + '/isBlocked').on('value', (snap) => {
@@ -2475,38 +3084,29 @@ function runSecurity() {
         }
     });
 }
-
-// Auto-run when script loads
 activateMyPresence();
 runSecurity();
-
-
-
-
-
-// Is code ko script ke sabse niche add karein
 window.addEventListener('pageshow', function(event) {
-    // Agar page cache (back button) se load hua hai, toh session check dubara run karo
     if (event.persisted || performance.getEntriesByType("navigation")[0].type === 'back_forward') {
         console.log("Back button detected: Re-establishing presence...");
-        checkSavedSession(); // Yeh function myUid check karega aur bulb on kar dega
+        checkSavedSession(); 
     }
 });
 
 
-// Jab bhi user screen par wapas aayega, bulb status refresh hoga
+
 window.onfocus = function() {
     console.log("App focused! Refreshing online status...");
     if(myUid) setOnlineStatus(true);
     if(typeof loadFriends === "function") loadFriends(); 
 };
 
-// Har 30 seconds mein status update karega (bina page refresh ke)
+
 setInterval(() => {
     if(myUid) {
         db.ref('online_status/' + myUid.replace(/-/g,"")).set(true);
     }
-}, 5000);
+}, 1000);
 
 
 function startPresenceSystem() {
@@ -2515,23 +3115,13 @@ function startPresenceSystem() {
 
     db.ref('.info/connected').on('value', (snap) => {
         if (snap.val() === true) {
-            // Jaise hi internet wapas aayega, yeh automatic bulb on kar dega
             myStatusRef.set(true);
             myStatusRef.onDisconnect().remove();
         }
     });
 }
-
-// Is function ko checkSavedSession() ke andar call kar dein
-
-
-
-
-
-// Phone tab ko hamesha "zinda" rakhne ke liye
 document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-        // Re-connect Firebase
         firebase.database().goOnline();
         if(myUid && partnerUid) {
             console.log("Syncing Laptop messages...");
@@ -2539,7 +3129,236 @@ document.addEventListener('visibilitychange', () => {
         }
     }
 });
+window.saveFriend = async function() {
+    console.log("---- DEBUG START ----");
+    const el = document.getElementById('targetId');
+    if(!el) { console.error("Input 'targetId' not found!"); return; }
+    
+    const fid = el.value.trim();
+    console.log("Friend ID entered:", fid);
 
+    if(!window.myUid) {
+        window.myUid = localStorage.getItem('ghost_id');
+    }
+    console.log("Your ID (myUid):", window.myUid);
+
+    if(!window.myUid) {
+        alert("CRITICAL ERROR: myUid is empty. Please login again.");
+        return;
+    }
+
+    const fname = prompt("Enter Friend Name:");
+    if(!fname) return;
+    const myK = window.myUid.replace(/-/g, "");
+    const frK = fid.replace(/-/g, "");
+    const path = 'account_vault/' + myK + '/friends/' + frK;
+    
+    console.log("Final Firebase Path:", path);
+    try {
+        await db.ref(path).set({
+            id: fid,
+            name: fname,
+            added: Date.now()
+        });
+        alert("SUCCESS: Saved in Firebase!");
+        if(window.loadFriends) window.loadFriends();
+    } catch (err) {
+        console.error("FIREBASE REJECTED:", err);
+        alert("Firebase Error: " + err.message);
+    }
+};
+document.addEventListener('DOMContentLoaded', () => {
+    syncMiniScreen();
+    if(typeof startLiveUserCounter === 'function') startLiveUserCounter();
+});
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+function getYTId(url) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+}
+
+db.ref('admin_screen').on('value', (snap) => {
+    const data = snap.val();
+    const container = document.getElementById('screen-content');
+    if (!container || !data) {
+        container.innerHTML = "SYSTEM READY";
+        return;
+    }
+
+    if (data.type === 'video') {
+        const videoId = getYTId(data.url);
+        
+        if (videoId) {
+            container.innerHTML = `
+                <iframe 
+                    style="width:100%; height:100%; position:absolute; top:0; left:0;" 
+                    src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&controls=0&modestbranding=1&rel=0&showinfo=0" 
+                    frameborder="0" 
+                    allow="autoplay; fullscreen" 
+                    allowfullscreen>
+                </iframe>`;
+        } else {
+            
+            container.innerHTML = `
+                <video autoplay muted loop playsinline style="width:100%; height:100%; object-fit:cover;">
+                    <source src="${data.url}" type="video/mp4">
+                </video>`;
+        }
+    } 
+    else if (data.type === 'image') {
+        container.innerHTML = `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover;">`;
+    }
+    else if (data.type === 'text') {
+        container.innerHTML = `<div style="display:flex; align-items:center; justify-content:center; height:100%; color:cyan; font-weight:bold; text-align:center; padding:10px;">${data.content}</div>`;
+    }
+});
+window.onload = function() {
+    console.log("System Initialized...");
+    if(document.getElementById('screen-content')) {
+        console.log("Screen element found! Connecting to Firebase...");
+        syncMiniScreen(); 
+        startLiveUserCounter(); 
+    } else {
+        console.error("Error: Dashboard elements not found in HTML!");
+    }
+};
+syncMiniScreen();
+
+let violationCount = 0;
+const userIdentity = localStorage.getItem("userEmail") || "Unknown_User"; 
+
+function handleViolation() {
+    violationCount++;
+
+    if (violationCount === 1) {
+        alert("⚠️ WARNING: Screenshots are strictly prohibited! Agli baar account PERMANENTLY BLOCK ho jayega.");
+    } 
+    else if (violationCount >= 2) {
+        blockUserPermanently();
+    }
+}
+
+function blockUserPermanently() {
+    const reportData = {
+        user: userIdentity,
+        reason: "Screenshot Attempt",
+        timestamp: new Date().toLocaleString(),
+        status: "Banned",
+      
+        screen: window.screen.width + "x" + window.screen.height 
+    };
+
+ 
+    db.ref('reports/banned_users').push(reportData);
+
+
+    localStorage.setItem("isBanned", "true");
+
+    document.body.innerHTML = `
+        <div style="background:black; color:red; height:100vh; display:flex; align-items:center; justify-content:center; flex-direction:column; text-align:center; font-family:monospace; border: 20px solid red;">
+            <h1 style="font-size: 50px;">🚫 SYSTEM TERMINATED</h1>
+            <p style="color:white; font-size: 20px;">SECURITY BREACH: Screen Capture Detected.</p>
+            <p style="color:gray;">User ID: ${userIdentity}</p>
+        </div>`;
+    
+    alert("CRITICAL ERROR: Security Violation. Your access is revoked.");
+}
+
+
+
+
+
+window.addEventListener('keyup', (e) => {
+    if (e.key === 'PrintScreen' || e.keyCode === 44) {
+        navigator.clipboard.writeText(""); 
+        handleViolation();
+    }
+});
+
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+        handleViolation();
+    }
+});
+
+window.onload = () => {
+    if (localStorage.getItem("isBanned") === "true") {
+        blockUserPermanently();
+    }
+};
+
+
+
+
+
+(function() {
+
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('selectstart', e => e.preventDefault());
+
+    
+    document.onkeydown = function(e) {
+        if (e.keyCode == 123 || 
+           (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || 
+           (e.ctrlKey && e.keyCode == 85)) {
+            alert("Security Alert: Unauthorized Access Blocked!");
+            return false;
+        }
+    };
+
+    setInterval(function() {
+        eval('debugger');
+    }, 100);
+
+    
+    if (typeof db !== 'undefined') {
+        db.ref('admin_screen').on('value', (snap) => {
+            const data = snap.val();
+            const container = document.getElementById('screen-content');
+            if (!container || !data) return;
+
+            container.innerHTML = ""; 
+
+            if (data.type === 'video') {
+                const video = document.createElement('video');
+                video.src = data.url;
+                video.autoplay = true; video.muted = true; video.loop = true;
+                video.style = "width:100%; height:100%; object-fit:cover; pointer-events:none;";
+                video.setAttribute('playsinline', '');
+                container.appendChild(video);
+            } 
+            else if (data.type === 'text') {
+                container.innerHTML = `<div id="type-target" style="padding:20px; color:#0f0; text-shadow: 0 0 10px #0f0;"></div>`;
+                if(typeof typeEffect === 'function') typeEffect(document.getElementById('type-target'), data.content, 50);
+                else document.getElementById('type-target').innerText = data.content;
+            }
+            else if (data.type === 'image') {
+                container.innerHTML = `<img src="${data.url}" style="width:100%; height:100%; object-fit:cover; pointer-events:none;">`;
+            }
+        });
+    }
+
+    console.log("%cSecurity: Active", "color: red; font-size: 20px; font-weight: bold;");
+})();
+
+
+
+
+
+
+document.addEventListener('contextmenu', event => event.preventDefault());
+
+document.onkeydown = function(e) {
+    if(e.keyCode == 123) return false; 
+    if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
+    if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false;
+    if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
+    if(e.ctrlKey && e.uKey && e.keyCode == 'U'.charCodeAt(0)) return false; 
+};
 </script>
 </body>
 </html>
